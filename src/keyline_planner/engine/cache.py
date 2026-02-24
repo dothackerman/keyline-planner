@@ -224,6 +224,7 @@ def _params_hash(params: ContourParams) -> str:
             "interval": params.interval,
             "simplify_tolerance": params.simplify_tolerance,
             "resolution": params.resolution.value,
+            "attribute_name": params.attribute_name,
         },
         sort_keys=True,
         separators=(",", ":"),

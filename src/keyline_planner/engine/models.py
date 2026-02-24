@@ -95,8 +95,41 @@ class AOI:
         Geometry coordinates are rounded to 2 decimal places (cm precision
         in LV95) to ensure stable hashing across floating-point variations.
         """
+
+        def _round_coordinates_array(value: Any, ndigits: int) -> Any:  # noqa: ANN401
+            """Recursively round numeric coordinate values inside nested arrays."""
+            if isinstance(value, list):
+                return [_round_coordinates_array(v, ndigits) for v in value]
+            if isinstance(value, tuple):
+                return tuple(_round_coordinates_array(v, ndigits) for v in value)
+            if isinstance(value, float):
+                return round(value, ndigits)
+            return value
+
+        def _round_geometry_coords(obj: Any, ndigits: int) -> Any:  # noqa: ANN401
+            """Return a copy of the GeoJSON geometry with rounded coordinates."""
+            if isinstance(obj, dict):
+                rounded: dict[str, Any] = {}
+                for key, value in obj.items():
+                    if key == "coordinates":
+                        rounded[key] = _round_coordinates_array(value, ndigits)
+                    else:
+                        # Recurse into nested geometries (e.g. GeometryCollection)
+                        rounded[key] = _round_geometry_coords(value, ndigits)
+                return rounded
+            if isinstance(obj, list):
+                return [_round_geometry_coords(v, ndigits) for v in obj]
+            if isinstance(obj, tuple):
+                return tuple(_round_geometry_coords(v, ndigits) for v in obj)
+            return obj
+
+        # Create a normalised copy of the geometry with rounded coordinates
+        rounded_geometry = _round_geometry_coords(self.geometry, ndigits=2)
+
         # Serialize geometry with sorted keys and rounded coordinates
-        serialised = json.dumps(self.geometry, sort_keys=True, separators=(",", ":"))
+        serialised = json.dumps(
+            rounded_geometry, sort_keys=True, separators=(",", ":")
+        )
         return hashlib.sha256(serialised.encode()).hexdigest()[:16]
 
 

@@ -83,27 +83,31 @@ def clip_dem(
     # Write AOI geometry to temporary GeoJSON for cutline
     cutline_path = _write_cutline_geojson(aoi)
 
-    cmd = [
-        "gdalwarp",
-        "-cutline",
-        str(cutline_path),
-        "-crop_to_cutline",
-        "-dstnodata",
-        str(nodata),
-        "-of",
-        "GTiff",
-        "-co",
-        "COMPRESS=LZW",
-        "-co",
-        "TILED=YES",
-        str(raster_path),
-        str(output_path),
-    ]
+    try:
+        cmd = [
+            "gdalwarp",
+            "-cutline",
+            str(cutline_path),
+            "-crop_to_cutline",
+            "-dstnodata",
+            str(nodata),
+            "-of",
+            "GTiff",
+            "-co",
+            "COMPRESS=LZW",
+            "-co",
+            "TILED=YES",
+            str(raster_path),
+            str(output_path),
+        ]
 
-    logger.info("Clipping DEM to AOI → %s", output_path)
-    subprocess.run(cmd, check=True, capture_output=True, text=True)
+        logger.info("Clipping DEM to AOI → %s", output_path)
+        subprocess.run(cmd, check=True, capture_output=True, text=True)
 
-    return output_path
+        return output_path
+    finally:
+        # Clean up temporary cutline file
+        cutline_path.unlink(missing_ok=True)
 
 
 def get_dem_stats(dem_path: Path) -> dict[str, Any]:

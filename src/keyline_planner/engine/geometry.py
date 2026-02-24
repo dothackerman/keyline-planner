@@ -49,7 +49,9 @@ def validate_geojson_geometry(geojson: dict[str, Any]) -> None:
 
     geom = shape(geojson)
     if not geom.is_valid:
-        msg = f"Invalid geometry: {geom.explain_validity()}"
+        from shapely import validation
+
+        msg = f"Invalid geometry: {validation.explain_validity(geom)}"
         raise ValueError(msg)
 
     if geom.is_empty:

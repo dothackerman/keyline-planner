@@ -48,7 +48,6 @@ def generate_contours(
 
     Raises:
         subprocess.CalledProcessError: If gdal_contour fails.
-        ValueError: If no contours are generated.
     """
     # gdal_contour outputs to a temp file first (GeoJSON format)
     tmp_fd, tmp_name = tempfile.mkstemp(suffix=".geojson", prefix="keyline_contours_raw_")
