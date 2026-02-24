@@ -26,6 +26,7 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
+import os
 from pathlib import Path
 from typing import TYPE_CHECKING
 from urllib.parse import urlparse
@@ -46,16 +47,24 @@ _DOWNLOAD_TIMEOUT = 120
 class TileCache:
     """Content-addressed cache for swissALTI3D tiles and derived artifacts."""
 
-    def __init__(self, cache_root: Path | None = None) -> None:
+    def __init__(
+        self, cache_root: Path | None = None, download_timeout: float | None = None
+    ) -> None:
         """Initialise the cache.
 
         Args:
             cache_root: Root directory for the cache. Defaults to
                 ``~/.cache/keyline-planner``.
+            download_timeout: Tile download timeout in seconds. If omitted,
+                value is loaded from ``KEYLINE_DOWNLOAD_TIMEOUT`` or defaults
+                to 120 seconds.
         """
         self.root = cache_root or DEFAULT_CACHE_ROOT
         self.raw_dir = self.root / "raw"
         self.derived_dir = self.root / "derived"
+        self.download_timeout = (
+            _download_timeout_from_env() if download_timeout is None else download_timeout
+        )
 
     def tile_path(self, tile: TileInfo) -> Path:
         """Return the expected local path for a raw tile.
@@ -103,22 +112,26 @@ class TileCache:
         dest.parent.mkdir(parents=True, exist_ok=True)
 
         # Download with streaming to handle large tiles
-        response = requests.get(tile.asset_href, stream=True, timeout=_DOWNLOAD_TIMEOUT)
-        response.raise_for_status()
+        with requests.get(tile.asset_href, stream=True, timeout=self.download_timeout) as response:
+            response.raise_for_status()
 
-        # Write to a temp file first, then rename for atomicity
-        tmp_path = dest.with_suffix(".tmp")
-        sha256 = hashlib.sha256()
-        with open(tmp_path, "wb") as f:
-            for chunk in response.iter_content(chunk_size=8192):
-                f.write(chunk)
-                sha256.update(chunk)
+            # Write to a temp file first, then rename for atomicity
+            tmp_path = dest.with_suffix(".tmp")
+            sha256 = hashlib.sha256()
+            try:
+                with open(tmp_path, "wb") as f:
+                    for chunk in response.iter_content(chunk_size=8192):
+                        f.write(chunk)
+                        sha256.update(chunk)
 
-        # Verify checksum if available
-        if tile.checksum is not None:
-            _verify_checksum(tile.checksum, sha256.hexdigest(), tile.item_id)
+                # Verify checksum if available
+                if tile.checksum is not None:
+                    _verify_checksum(tile.checksum, sha256.hexdigest(), tile.item_id)
 
-        tmp_path.rename(dest)
+                tmp_path.rename(dest)
+            except Exception:
+                tmp_path.unlink(missing_ok=True)
+                raise
 
         # Save tile metadata alongside
         self._save_tile_metadata(tile, dest.parent)
@@ -208,6 +221,33 @@ def _verify_checksum(expected: str, actual_sha256: str, tile_id: str) -> None:
         tile_id,
         expected[:20],
     )
+
+
+def _download_timeout_from_env() -> float:
+    """Return download timeout from environment with safe fallback."""
+    raw = os.getenv("KEYLINE_DOWNLOAD_TIMEOUT")
+    if raw is None:
+        return float(_DOWNLOAD_TIMEOUT)
+
+    try:
+        timeout = float(raw)
+    except ValueError:
+        logger.warning(
+            "Invalid KEYLINE_DOWNLOAD_TIMEOUT=%r; falling back to %ss.",
+            raw,
+            _DOWNLOAD_TIMEOUT,
+        )
+        return float(_DOWNLOAD_TIMEOUT)
+
+    if timeout <= 0:
+        logger.warning(
+            "Non-positive KEYLINE_DOWNLOAD_TIMEOUT=%r; falling back to %ss.",
+            raw,
+            _DOWNLOAD_TIMEOUT,
+        )
+        return float(_DOWNLOAD_TIMEOUT)
+
+    return timeout
 
 
 def _params_hash(params: ContourParams) -> str:

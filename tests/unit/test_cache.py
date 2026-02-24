@@ -6,7 +6,12 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from keyline_planner.engine.cache import TileCache, _params_hash, _verify_checksum
+from keyline_planner.engine.cache import (
+    TileCache,
+    _download_timeout_from_env,
+    _params_hash,
+    _verify_checksum,
+)
 from keyline_planner.engine.models import ContourParams, TileInfo
 
 if TYPE_CHECKING:
@@ -89,3 +94,23 @@ class TestParamsHash:
     def test_hash_length(self) -> None:
         params = ContourParams()
         assert len(_params_hash(params)) == 12
+
+
+class TestDownloadTimeout:
+    """Tests for environment-based download timeout parsing."""
+
+    def test_uses_default_when_env_missing(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.delenv("KEYLINE_DOWNLOAD_TIMEOUT", raising=False)
+        assert _download_timeout_from_env() == 120.0
+
+    def test_uses_env_when_valid(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setenv("KEYLINE_DOWNLOAD_TIMEOUT", "300")
+        assert _download_timeout_from_env() == 300.0
+
+    def test_falls_back_when_invalid(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setenv("KEYLINE_DOWNLOAD_TIMEOUT", "not-a-number")
+        assert _download_timeout_from_env() == 120.0
+
+    def test_falls_back_when_non_positive(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setenv("KEYLINE_DOWNLOAD_TIMEOUT", "0")
+        assert _download_timeout_from_env() == 120.0
