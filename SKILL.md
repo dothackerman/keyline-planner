@@ -28,16 +28,16 @@ Use this skill immediately when any of the following happens:
 Also promote stable, broadly useful rules to:
 
 - `AGENTS.md` for workflow/process rules
-- `.github/copilot-instructions.md` for Copilot-specific guidance
+- `.github/copilot-instructions.md` for Copilot-specific guidance (create if needed)
 - `README.md` (or project docs) for user-facing behavior
 
 ## Minimal setup
 
 ```bash
 mkdir -p .learnings
-: > .learnings/LEARNINGS.md
-: > .learnings/ERRORS.md
-: > .learnings/FEATURE_REQUESTS.md
+touch .learnings/LEARNINGS.md
+touch .learnings/ERRORS.md
+touch .learnings/FEATURE_REQUESTS.md
 ```
 
 ## Entry templates
@@ -81,9 +81,8 @@ Concrete update to implement or enforce.
 What failed.
 
 ### Error Output
-```text
-Paste the exact error output.
-```
+
+    Paste the exact error output here (indented block).
 
 ### Context
 Command/action attempted, parameters, and environment details.
@@ -136,7 +135,7 @@ Practical first implementation path.
 `TYPE-YYYYMMDD-###`
 
 - `TYPE`: `LRN`, `ERR`, `FEAT`
-- Date in UTC
+- Date in UTC (`YYYYMMDD` format)
 - 3-digit counter per day/file
 
-Example: `ERR-20260224-003`
+Example: `ERR-20250115-003`
