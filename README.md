@@ -90,12 +90,14 @@ tests/
 ├── integration/      # Raster + contour tests with synthetic DEMs
 └── e2e/              # CLI tests via CliRunner
 
-docs/architecture/    # arc42 documentation (human-agent boundary)
+docs/architecture/    # arc42 documentation (human-readable)
+AGENTS.md             # Agent operating rules and architectural constraints
+SKILL.md              # Agent self-improvement workflow (logs, templates)
 ```
 
 ### Architecture
 
-This project follows a **two-layer architecture** (see [AGENTS.md](AGENTS.md)):
+This project follows a **two-layer architecture**:
 
 - **Layer 1 (Engine)**: Deterministic processing. Pure transformations with
   explicit inputs/outputs. No agent logic.
@@ -104,7 +106,11 @@ This project follows a **two-layer architecture** (see [AGENTS.md](AGENTS.md)):
 
 The CLI is a thin adapter — not an agent. It calls the engine pipeline directly.
 
-Full architecture documentation: [`docs/architecture/`](docs/architecture/)
+| Artifact | Audience | Purpose |
+|---|---|---|
+| [`docs/architecture/`](docs/architecture/) | Humans | arc42 documentation — the negotiation boundary between human intent and agent autonomy |
+| [`AGENTS.md`](AGENTS.md) | Agents | Architectural constraints, modularity rules, extension protocol |
+| [`SKILL.md`](SKILL.md) | Agents | Operational self-improvement: error logging, learnings, promotion rules |
 
 ## Data Source
 
