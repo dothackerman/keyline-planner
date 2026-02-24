@@ -74,35 +74,36 @@ def generate_contours(
         params.attribute_name,
     )
     try:
-        subprocess.run(cmd, check=True, capture_output=True, text=True)
-    except subprocess.CalledProcessError as exc:
-        logger.error("gdal_contour failed with exit code %s", exc.returncode)
-        if exc.stderr:
-            logger.error("gdal_contour stderr:\n%s", exc.stderr.strip())
-        if exc.stdout:
-            logger.debug("gdal_contour stdout:\n%s", exc.stdout.strip())
-        raise
+        try:
+            subprocess.run(cmd, check=True, capture_output=True, text=True)
+        except subprocess.CalledProcessError as exc:
+            logger.error("gdal_contour failed with exit code %s", exc.returncode)
+            if exc.stderr:
+                logger.error("gdal_contour stderr:\n%s", exc.stderr.strip())
+            if exc.stdout:
+                logger.debug("gdal_contour stdout:\n%s", exc.stdout.strip())
+            raise
 
-    # Read raw contours
-    raw_geojson = json.loads(Path(tmp_name).read_text())
+        # Read raw contours
+        raw_geojson = json.loads(Path(tmp_name).read_text())
 
-    # Post-process: simplify, canonicalise, write final output
-    features = raw_geojson.get("features", [])
-    if not features:
-        logger.warning("No contour features generated — DEM may be flat or too small")
+        # Post-process: simplify, canonicalise, write final output
+        features = raw_geojson.get("features", [])
+        if not features:
+            logger.warning("No contour features generated — DEM may be flat or too small")
 
-    processed_features = _postprocess_features(features, params)
+        processed_features = _postprocess_features(features, params)
 
-    # Write canonicalised output
-    output_geojson = _build_canonical_geojson(processed_features, params)
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text(json.dumps(output_geojson, indent=2, sort_keys=False))
+        # Write canonicalised output
+        output_geojson = _build_canonical_geojson(processed_features, params)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.write_text(json.dumps(output_geojson, indent=2, sort_keys=False))
 
-    # Cleanup temp file
-    Path(tmp_name).unlink(missing_ok=True)
-
-    logger.info("Generated %d contour features → %s", len(processed_features), output_path)
-    return output_path
+        logger.info("Generated %d contour features → %s", len(processed_features), output_path)
+        return output_path
+    finally:
+        # Cleanup temp file on both success and failure paths
+        Path(tmp_name).unlink(missing_ok=True)
 
 
 def count_contours(geojson_path: Path) -> int:
