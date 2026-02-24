@@ -3,11 +3,13 @@
 
 .DEFAULT_GOAL := help
 
-.PHONY: help install dev lint format test test-unit test-integration test-e2e coverage clean
+.PHONY: help install dev lint format test test-unit test-integration test-e2e coverage clean ci
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | \
 		awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
+
+ci: lint format-check test ## Run full local CI (lint + format check + tests)
 
 install: ## Install the package in editable mode
 	pip install -e .

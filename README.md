@@ -62,6 +62,7 @@ Each run produces:
 
 ```bash
 make dev          # Install with dev dependencies
+make ci           # Run full local CI (lint + format check + tests)
 make test         # Run all tests (unit + integration + e2e)
 make test-unit    # Run unit tests only
 make lint         # Run ruff linter
