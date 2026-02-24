@@ -58,6 +58,34 @@ Each run produces:
 - `dem_clip.tif` — clipped DEM raster (optional, `--no-dem` to skip)
 - `manifest.json` — provenance metadata (parameters, timing, tile IDs, attribution)
 
+### Visual Inspection in QGIS
+
+Install QGIS from the official download page:
+- https://qgis.org/download/
+- Installation guide: https://docs.qgis.org/latest/en/docs/user_manual/introduction/getting_started.html
+
+To inspect contours over the DEM:
+
+1. Open QGIS and create a new project.
+2. Set project CRS to `EPSG:2056` (Project -> Properties -> CRS).  
+   This matches Swiss LV95 outputs and avoids on-the-fly reprojection confusion.
+3. Drag `dem_clip.tif` into the map.
+4. Drag `contours.geojson` into the map.
+5. In the Layers panel, keep `contours.geojson` above `dem_clip.tif`.
+6. Style the DEM for readability:
+   - Right-click `dem_clip.tif` -> Properties -> Symbology
+   - Render type: `Singleband pseudocolor`
+   - Color ramp: e.g. `Terrain`
+7. Style contours:
+   - Right-click `contours.geojson` -> Properties -> Symbology
+   - Simple line, width `0.6-1.2 px`, high-contrast color (e.g. dark brown/black)
+   - Optional labels: enable labels and use the elevation field for line labels
+8. Zoom to layer extent and visually verify contour alignment against terrain transitions.
+
+That is sufficient for manual visual inspection on a raster base layer.
+Optional improvements for easier review: add a hillshade from `dem_clip.tif`,
+use rule-based styling for index contours, and save the project as a `.qgz` template.
+
 ## Development
 
 ```bash
