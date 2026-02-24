@@ -1,0 +1,51 @@
+# Keyline Planner — Python
+
+# Byte-compiled / optimised / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+*.egg-info/
+*.egg
+dist/
+build/
+wheels/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# pytest
+.pytest_cache/
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+
+# mypy
+.mypy_cache/
+
+# ruff
+.ruff_cache/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Tile cache (local developer cache — never commit real geodata)
+.cache/
+tile_cache/
+
+# Benchmark output
+.benchmarks/
+
+# Test golden-file updates that haven't been reviewed
+# (pytest-regressions stores baselines in tests/**/; those ARE committed)
