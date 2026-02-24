@@ -127,9 +127,7 @@ class AOI:
         rounded_geometry = _round_geometry_coords(self.geometry, ndigits=2)
 
         # Serialize geometry with sorted keys and rounded coordinates
-        serialised = json.dumps(
-            rounded_geometry, sort_keys=True, separators=(",", ":")
-        )
+        serialised = json.dumps(rounded_geometry, sort_keys=True, separators=(",", ":"))
         return hashlib.sha256(serialised.encode()).hexdigest()[:16]
 
 

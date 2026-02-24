@@ -90,24 +90,11 @@ Self-improvement is defined as:
 
 > Generating output → Evaluating against measurable criteria → Retaining evaluation → Improving future iterations.
 
-All agent tasks should follow:
-
-1. Produce result.
-2. Evaluate result.
-3. Persist evaluation metadata.
-4. Adjust strategy if needed.
-
-Evaluation must be:
-- Explicit
-- Reproducible
-- Version-controlled where relevant
-
-Improvement must be:
-- Observable
-- Justified
-- Non-destructive
-
+Evaluation must be explicit, reproducible, and version-controlled.
+Improvement must be observable, justified, and non-destructive.
 No silent behavioral drift.
+
+For the operational workflow — triggers, log files, entry templates, and promotion rules — see [`SKILL.md`](SKILL.md).
 
 ---
 
