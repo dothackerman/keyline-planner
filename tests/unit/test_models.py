@@ -6,8 +6,8 @@ import pytest
 
 from keyline_planner.engine.models import (
     AOI,
-    BBox,
     CRS,
+    BBox,
     ContourParams,
     Resolution,
 )

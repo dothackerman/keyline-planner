@@ -13,7 +13,7 @@ from keyline_planner.engine.geometry import (
     reproject_geometry,
     validate_geojson_geometry,
 )
-from keyline_planner.engine.models import BBox, CRS
+from keyline_planner.engine.models import CRS, BBox
 
 
 class TestValidateGeojsonGeometry:
@@ -29,17 +29,21 @@ class TestValidateGeojsonGeometry:
 
     def test_invalid_type_linestring(self) -> None:
         with pytest.raises(ValueError, match="Unsupported geometry type"):
-            validate_geojson_geometry({
-                "type": "LineString",
-                "coordinates": [[0, 0], [1, 1]],
-            })
+            validate_geojson_geometry(
+                {
+                    "type": "LineString",
+                    "coordinates": [[0, 0], [1, 1]],
+                }
+            )
 
     def test_empty_polygon(self) -> None:
         with pytest.raises(ValueError):
-            validate_geojson_geometry({
-                "type": "Polygon",
-                "coordinates": [],
-            })
+            validate_geojson_geometry(
+                {
+                    "type": "Polygon",
+                    "coordinates": [],
+                }
+            )
 
 
 class TestReprojectGeometry:
@@ -58,9 +62,7 @@ class TestReprojectGeometry:
         assert coords[0] > 2_000_000
         assert coords[1] > 1_000_000
 
-    def test_lv95_to_wgs84_roundtrip(
-        self, sample_polygon_lv95: dict[str, Any]
-    ) -> None:
+    def test_lv95_to_wgs84_roundtrip(self, sample_polygon_lv95: dict[str, Any]) -> None:
         wgs84 = reproject_geometry(sample_polygon_lv95, CRS.LV95, CRS.WGS84)
         back = reproject_geometry(wgs84, CRS.WGS84, CRS.LV95)
         # Should be approximately the same (within 0.01m for LV95)
@@ -68,10 +70,9 @@ class TestReprojectGeometry:
         back_x = back["coordinates"][0][0][0]
         assert abs(orig_x - back_x) < 0.01
 
-    def test_unsupported_crs_raises(self, sample_polygon_lv95: dict[str, Any]) -> None:
-        with pytest.raises(ValueError, match="Unsupported CRS"):
-            reproject_geometry(sample_polygon_lv95, CRS.LV95, CRS.LV95)  # won't raise — same CRS
-        # Real unsupported would need a third CRS; for now just verify the path works
+    def test_same_crs_returns_unchanged(self, sample_polygon_lv95: dict[str, Any]) -> None:
+        result = reproject_geometry(sample_polygon_lv95, CRS.LV95, CRS.LV95)
+        assert result == sample_polygon_lv95
 
 
 class TestGeometryToBBox:
@@ -109,9 +110,7 @@ class TestNormaliseAoi:
         assert aoi.bbox.crs == CRS.LV95
         assert aoi.geometry["type"] == "Polygon"
 
-    def test_wgs84_input_reprojected(
-        self, sample_polygon_wgs84: dict[str, Any]
-    ) -> None:
+    def test_wgs84_input_reprojected(self, sample_polygon_wgs84: dict[str, Any]) -> None:
         aoi = normalise_aoi(geojson=sample_polygon_wgs84, crs=CRS.WGS84)
         # Result should be in LV95
         assert aoi.bbox.crs == CRS.LV95
@@ -134,13 +133,15 @@ class TestNormaliseAoi:
     def test_outside_switzerland_raises(self) -> None:
         geom = {
             "type": "Polygon",
-            "coordinates": [[
-                [0.0, 0.0],
-                [1.0, 0.0],
-                [1.0, 1.0],
-                [0.0, 1.0],
-                [0.0, 0.0],
-            ]],
+            "coordinates": [
+                [
+                    [0.0, 0.0],
+                    [1.0, 0.0],
+                    [1.0, 1.0],
+                    [0.0, 1.0],
+                    [0.0, 0.0],
+                ]
+            ],
         }
         with pytest.raises(ValueError, match="outside Swiss territory"):
             normalise_aoi(geojson=geom, crs=CRS.LV95)

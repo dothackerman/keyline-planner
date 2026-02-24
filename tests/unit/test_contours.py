@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from pathlib import Path
+from typing import TYPE_CHECKING
 
 import pytest
 
@@ -15,6 +15,9 @@ from keyline_planner.engine.contours import (
     get_elevation_range,
 )
 from keyline_planner.engine.models import ContourParams
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 class TestRoundGeometryCoords:
@@ -41,17 +44,22 @@ class TestPostprocessFeatures:
     """Tests for feature post-processing."""
 
     def test_simplification_applied(self) -> None:
-        features = [{
-            "type": "Feature",
-            "geometry": {
-                "type": "LineString",
-                "coordinates": [
-                    [0.0, 0.0], [0.5, 0.001], [1.0, 0.0],
-                    [1.5, 0.001], [2.0, 0.0],
-                ],
-            },
-            "properties": {"elevation": 100.0},
-        }]
+        features = [
+            {
+                "type": "Feature",
+                "geometry": {
+                    "type": "LineString",
+                    "coordinates": [
+                        [0.0, 0.0],
+                        [0.5, 0.001],
+                        [1.0, 0.0],
+                        [1.5, 0.001],
+                        [2.0, 0.0],
+                    ],
+                },
+                "properties": {"elevation": 100.0},
+            }
+        ]
         params = ContourParams(simplify_tolerance=0.01)
         result = _postprocess_features(features, params)
         assert len(result) == 1
@@ -61,11 +69,13 @@ class TestPostprocessFeatures:
         )
 
     def test_empty_geometry_skipped(self) -> None:
-        features = [{
-            "type": "Feature",
-            "geometry": {"type": "LineString", "coordinates": []},
-            "properties": {"elevation": 100.0},
-        }]
+        features = [
+            {
+                "type": "Feature",
+                "geometry": {"type": "LineString", "coordinates": []},
+                "properties": {"elevation": 100.0},
+            }
+        ]
         params = ContourParams()
         result = _postprocess_features(features, params)
         assert len(result) == 0

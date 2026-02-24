@@ -14,14 +14,16 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import subprocess
 import tempfile
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from shapely.geometry import mapping, shape
 
-from keyline_planner.engine.models import ContourParams
+if TYPE_CHECKING:
+    from keyline_planner.engine.models import ContourParams
 
 logger = logging.getLogger(__name__)
 
@@ -49,20 +51,22 @@ def generate_contours(
         ValueError: If no contours are generated.
     """
     # gdal_contour outputs to a temp file first (GeoJSON format)
-    tmp_geojson = tempfile.NamedTemporaryFile(
-        suffix=".geojson",
-        prefix="keyline_contours_raw_",
-        delete=False,
-    )
-    tmp_geojson.close()
+    tmp_fd, tmp_name = tempfile.mkstemp(suffix=".geojson", prefix="keyline_contours_raw_")
+    os.close(tmp_fd)
+    # GDAL's GeoJSON driver refuses to overwrite existing files,
+    # so remove the placeholder created by mkstemp.
+    os.unlink(tmp_name)
 
     cmd = [
         "gdal_contour",
-        "-i", str(params.interval),
-        "-a", params.attribute_name,
-        "-f", "GeoJSON",
+        "-i",
+        str(params.interval),
+        "-a",
+        params.attribute_name,
+        "-f",
+        "GeoJSON",
         str(dem_path),
-        tmp_geojson.name,
+        tmp_name,
     ]
 
     logger.info(
@@ -73,7 +77,7 @@ def generate_contours(
     subprocess.run(cmd, check=True, capture_output=True, text=True)
 
     # Read raw contours
-    raw_geojson = json.loads(Path(tmp_geojson.name).read_text())
+    raw_geojson = json.loads(Path(tmp_name).read_text())
 
     # Post-process: simplify, canonicalise, write final output
     features = raw_geojson.get("features", [])
@@ -85,12 +89,10 @@ def generate_contours(
     # Write canonicalised output
     output_geojson = _build_canonical_geojson(processed_features, params)
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text(
-        json.dumps(output_geojson, indent=2, sort_keys=False)
-    )
+    output_path.write_text(json.dumps(output_geojson, indent=2, sort_keys=False))
 
     # Cleanup temp file
-    Path(tmp_geojson.name).unlink(missing_ok=True)
+    Path(tmp_name).unlink(missing_ok=True)
 
     logger.info("Generated %d contour features → %s", len(processed_features), output_path)
     return output_path
@@ -170,13 +172,15 @@ def _postprocess_features(
         # Normalise elevation value
         elev = feature.get("properties", {}).get(params.attribute_name, 0.0)
 
-        processed.append({
-            "type": "Feature",
-            "geometry": geom_dict,
-            "properties": {
-                params.attribute_name: round(float(elev), 2),
-            },
-        })
+        processed.append(
+            {
+                "type": "Feature",
+                "geometry": geom_dict,
+                "properties": {
+                    params.attribute_name: round(float(elev), 2),
+                },
+            }
+        )
 
     return processed
 
@@ -198,6 +202,7 @@ def _build_canonical_geojson(
     Returns:
         Canonical GeoJSON FeatureCollection dict.
     """
+
     # Sort by (elevation, minx, miny) for deterministic ordering
     def sort_key(f: dict[str, Any]) -> tuple[float, float, float]:
         elev = f["properties"].get(params.attribute_name, 0.0)
@@ -226,7 +231,8 @@ def _round_geometry_coords(
     Returns:
         Geometry dict with rounded coordinates.
     """
-    def _round_coords(coords: Any) -> Any:
+
+    def _round_coords(coords: list | float) -> list | float:
         if isinstance(coords, (list, tuple)):
             if coords and isinstance(coords[0], (int, float)):
                 return [round(c, precision) for c in coords]

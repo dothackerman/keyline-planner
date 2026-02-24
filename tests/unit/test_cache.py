@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
-from pathlib import Path
+from typing import TYPE_CHECKING
 
 import pytest
 
 from keyline_planner.engine.cache import TileCache, _params_hash, _verify_checksum
-from keyline_planner.engine.models import ContourParams, Resolution, TileInfo
+from keyline_planner.engine.models import ContourParams, TileInfo
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 class TestTileCache:
@@ -21,7 +24,8 @@ class TestTileCache:
             asset_href="https://example.com/data/tile_001_2m.tif",
         )
         path = cache.tile_path(tile)
-        assert path == tmp_dir / "raw" / "ch.swisstopo.swissalti3d" / "tile_001" / "tile_001_2m.tif"
+        expected = tmp_dir / "raw" / "ch.swisstopo.swissalti3d" / "tile_001" / "tile_001_2m.tif"
+        assert path == expected
 
     def test_has_tile_false_when_missing(self, tmp_dir: Path) -> None:
         cache = TileCache(cache_root=tmp_dir)

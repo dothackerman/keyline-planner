@@ -81,8 +81,17 @@ select = [
 ignore = [
     "D100",   # missing docstring in public module (allow thin modules)
     "D104",   # missing docstring in public package
-    "ANN101", # missing type annotation for self
-    "ANN102", # missing type annotation for cls
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = [
+    "D102",   # test methods don't need docstrings — names are descriptive
+    "D103",   # test functions don't need docstrings
+    "ANN",    # test code doesn't need full type annotations
+    "SIM115", # context managers not needed in test helpers
+]
+"src/keyline_planner/cli/**/*.py" = [
+    "TC003",  # Typer needs runtime access to type annotations (Path etc.)
 ]
 
 [tool.ruff.lint.pydocstyle]

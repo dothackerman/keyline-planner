@@ -14,9 +14,8 @@ from __future__ import annotations
 
 import json
 import logging
-import sys
 from pathlib import Path
-from typing import Annotated, Optional
+from typing import Annotated
 
 import typer
 from rich.console import Console
@@ -59,7 +58,7 @@ def version_callback(value: bool) -> None:
 @app.callback()
 def main(
     version: Annotated[
-        Optional[bool],
+        bool | None,
         typer.Option("--version", "-V", help="Show version and exit.", callback=version_callback),
     ] = None,
 ) -> None:
@@ -69,16 +68,18 @@ def main(
 @app.command()
 def contours(
     bbox: Annotated[
-        Optional[str],
+        str | None,
         typer.Option(
-            "--bbox", "-b",
+            "--bbox",
+            "-b",
             help='Bounding box as "xmin,ymin,xmax,ymax" in the specified CRS.',
         ),
     ] = None,
     geojson_file: Annotated[
-        Optional[Path],
+        Path | None,
         typer.Option(
-            "--geojson", "-g",
+            "--geojson",
+            "-g",
             help="Path to a GeoJSON file containing the AOI polygon.",
             exists=True,
             readable=True,
@@ -91,7 +92,8 @@ def contours(
     resolution: Annotated[
         str,
         typer.Option(
-            "--resolution", "-r",
+            "--resolution",
+            "-r",
             help="DEM resolution: 'standard' (2m) or 'high' (0.5m).",
         ),
     ] = "standard",
@@ -104,11 +106,11 @@ def contours(
         typer.Option("--simplify", "-s", help="Simplification tolerance in CRS units (0=none)."),
     ] = 0.0,
     output_dir: Annotated[
-        Optional[Path],
+        Path | None,
         typer.Option("--output", "-o", help="Output directory for results."),
     ] = None,
     cache_dir: Annotated[
-        Optional[Path],
+        Path | None,
         typer.Option("--cache", help="Cache directory for downloaded tiles."),
     ] = None,
     no_dem: Annotated[
@@ -148,7 +150,9 @@ def contours(
     res_map = {"standard": Resolution.STANDARD, "high": Resolution.HIGH}
     input_resolution = res_map.get(resolution.lower())
     if input_resolution is None:
-        console.print(f"[red]Error:[/] Unknown resolution '{resolution}'. Use 'standard' or 'high'.")
+        console.print(
+            f"[red]Error:[/] Unknown resolution '{resolution}'. Use 'standard' or 'high'."
+        )
         raise typer.Exit(code=1)
 
     # Parse bbox or load geojson
@@ -158,7 +162,7 @@ def contours(
     if bbox is not None:
         try:
             parts = [float(x.strip()) for x in bbox.split(",")]
-            if len(parts) != 4:  # noqa: PLR2004
+            if len(parts) != 4:
                 msg = "Expected 4 values"
                 raise ValueError(msg)
             parsed_bbox = (parts[0], parts[1], parts[2], parts[3])
@@ -209,7 +213,8 @@ def contours(
     table.add_column("Value")
     table.add_row("Contours", str(result.contours_path))
     table.add_row("Count", f"{result.contour_count} contour lines")
-    table.add_row("Elevation", f"{result.elevation_range[0]:.1f} – {result.elevation_range[1]:.1f} m")
+    elev_lo, elev_hi = result.elevation_range
+    table.add_row("Elevation", f"{elev_lo:.1f} - {elev_hi:.1f} m")
     table.add_row("Interval", f"{interval} m")
     table.add_row("Resolution", f"{input_resolution.value} m")
     table.add_row("AOI Hash", result.aoi_hash)

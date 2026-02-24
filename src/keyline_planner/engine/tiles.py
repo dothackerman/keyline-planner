@@ -12,7 +12,6 @@ behind a clean interface that can be mocked in tests.
 from __future__ import annotations
 
 import logging
-from typing import Any
 
 from pystac_client import Client
 
@@ -93,7 +92,7 @@ def discover_tiles(
 
 
 def _parse_stac_item(
-    item: Any,
+    item: object,
     target_gsd: float,
 ) -> TileInfo | None:
     """Parse a STAC Item into a TileInfo, filtering by GSD.
@@ -113,10 +112,7 @@ def _parse_stac_item(
             continue
 
         # Check GSD via extra_fields or asset properties
-        asset_gsd = (
-            asset.extra_fields.get("gsd")
-            or asset.extra_fields.get("eo:gsd")
-        )
+        asset_gsd = asset.extra_fields.get("gsd") or asset.extra_fields.get("eo:gsd")
         if asset_gsd is not None and float(asset_gsd) != target_gsd:
             continue
 

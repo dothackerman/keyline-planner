@@ -27,11 +27,13 @@ import hashlib
 import json
 import logging
 from pathlib import Path
+from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
 import requests
 
-from keyline_planner.engine.models import ContourParams, TileInfo
+if TYPE_CHECKING:
+    from keyline_planner.engine.models import ContourParams, TileInfo
 
 logger = logging.getLogger(__name__)
 
@@ -217,9 +219,13 @@ def _params_hash(params: ContourParams) -> str:
     Returns:
         Short hex hash string.
     """
-    serialised = json.dumps({
-        "interval": params.interval,
-        "simplify_tolerance": params.simplify_tolerance,
-        "resolution": params.resolution.value,
-    }, sort_keys=True, separators=(",", ":"))
+    serialised = json.dumps(
+        {
+            "interval": params.interval,
+            "simplify_tolerance": params.simplify_tolerance,
+            "resolution": params.resolution.value,
+        },
+        sort_keys=True,
+        separators=(",", ":"),
+    )
     return hashlib.sha256(serialised.encode()).hexdigest()[:12]

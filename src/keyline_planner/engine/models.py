@@ -10,8 +10,10 @@ import hashlib
 import json
 from dataclasses import dataclass, field
 from enum import Enum
-from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 class CRS(Enum):
@@ -94,9 +96,7 @@ class AOI:
         in LV95) to ensure stable hashing across floating-point variations.
         """
         # Serialize geometry with sorted keys and rounded coordinates
-        serialised = json.dumps(
-            self.geometry, sort_keys=True, separators=(",", ":")
-        )
+        serialised = json.dumps(self.geometry, sort_keys=True, separators=(",", ":"))
         return hashlib.sha256(serialised.encode()).hexdigest()[:16]
 
 

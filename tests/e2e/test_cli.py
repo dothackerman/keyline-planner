@@ -9,13 +9,15 @@ the pipeline is tested, and testing CLI argument parsing/validation here).
 from __future__ import annotations
 
 import json
-from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import pytest
 from typer.testing import CliRunner
 
 from keyline_planner.cli.main import app
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 pytestmark = pytest.mark.e2e
 
@@ -45,14 +47,17 @@ class TestCLIBasics:
         result = runner.invoke(app, ["contours"])
         assert result.exit_code == 1
 
-    def test_both_inputs_shows_error(
-        self, sample_geojson_file: Path
-    ) -> None:
-        result = runner.invoke(app, [
-            "contours",
-            "--bbox", "2600000,1200000,2601000,1201000",
-            "--geojson", str(sample_geojson_file),
-        ])
+    def test_both_inputs_shows_error(self, sample_geojson_file: Path) -> None:
+        result = runner.invoke(
+            app,
+            [
+                "contours",
+                "--bbox",
+                "2600000,1200000,2601000,1201000",
+                "--geojson",
+                str(sample_geojson_file),
+            ],
+        )
         assert result.exit_code == 1
 
     def test_invalid_bbox_format(self) -> None:
@@ -60,19 +65,29 @@ class TestCLIBasics:
         assert result.exit_code == 1
 
     def test_invalid_crs(self) -> None:
-        result = runner.invoke(app, [
-            "contours",
-            "--bbox", "2600000,1200000,2601000,1201000",
-            "--crs", "invalid",
-        ])
+        result = runner.invoke(
+            app,
+            [
+                "contours",
+                "--bbox",
+                "2600000,1200000,2601000,1201000",
+                "--crs",
+                "invalid",
+            ],
+        )
         assert result.exit_code == 1
 
     def test_invalid_resolution(self) -> None:
-        result = runner.invoke(app, [
-            "contours",
-            "--bbox", "2600000,1200000,2601000,1201000",
-            "--resolution", "ultra",
-        ])
+        result = runner.invoke(
+            app,
+            [
+                "contours",
+                "--bbox",
+                "2600000,1200000,2601000,1201000",
+                "--resolution",
+                "ultra",
+            ],
+        )
         assert result.exit_code == 1
 
 
@@ -81,11 +96,15 @@ class TestCLIGeojsonParsing:
 
     def test_loads_feature(self, tmp_dir: Path, sample_polygon_lv95: dict[str, Any]) -> None:
         path = tmp_dir / "feature.geojson"
-        path.write_text(json.dumps({
-            "type": "Feature",
-            "geometry": sample_polygon_lv95,
-            "properties": {},
-        }))
+        path.write_text(
+            json.dumps(
+                {
+                    "type": "Feature",
+                    "geometry": sample_polygon_lv95,
+                    "properties": {},
+                }
+            )
+        )
         # This will fail at the pipeline step (no STAC), but it should
         # parse the GeoJSON successfully — exit code 1 from pipeline, not parsing
         result = runner.invoke(app, ["contours", "--geojson", str(path)])
@@ -97,21 +116,25 @@ class TestCLIGeojsonParsing:
         self, tmp_dir: Path, sample_polygon_lv95: dict[str, Any]
     ) -> None:
         path = tmp_dir / "collection.geojson"
-        path.write_text(json.dumps({
-            "type": "FeatureCollection",
-            "features": [{
-                "type": "Feature",
-                "geometry": sample_polygon_lv95,
-                "properties": {},
-            }],
-        }))
+        path.write_text(
+            json.dumps(
+                {
+                    "type": "FeatureCollection",
+                    "features": [
+                        {
+                            "type": "Feature",
+                            "geometry": sample_polygon_lv95,
+                            "properties": {},
+                        }
+                    ],
+                }
+            )
+        )
         result = runner.invoke(app, ["contours", "--geojson", str(path)])
         assert result.exit_code == 1
         assert "Failed to parse GeoJSON" not in result.output
 
-    def test_loads_raw_geometry(
-        self, tmp_dir: Path, sample_polygon_lv95: dict[str, Any]
-    ) -> None:
+    def test_loads_raw_geometry(self, tmp_dir: Path, sample_polygon_lv95: dict[str, Any]) -> None:
         path = tmp_dir / "raw.geojson"
         path.write_text(json.dumps(sample_polygon_lv95))
         result = runner.invoke(app, ["contours", "--geojson", str(path)])

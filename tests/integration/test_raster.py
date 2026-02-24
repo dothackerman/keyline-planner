@@ -6,13 +6,15 @@ to verify deterministic behaviour without network access.
 
 from __future__ import annotations
 
-from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING
 
 import pytest
 
-from keyline_planner.engine.models import AOI, BBox, CRS, ContourParams
+from keyline_planner.engine.models import AOI, BBox
 from keyline_planner.engine.raster import build_vrt, clip_dem, get_dem_stats
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 pytestmark = pytest.mark.integration
 
@@ -20,9 +22,7 @@ pytestmark = pytest.mark.integration
 class TestBuildVrt:
     """Tests for VRT mosaic construction."""
 
-    def test_builds_vrt_from_single_tile(
-        self, synthetic_dem: Path, tmp_dir: Path
-    ) -> None:
+    def test_builds_vrt_from_single_tile(self, synthetic_dem: Path, tmp_dir: Path) -> None:
         vrt_path = tmp_dir / "test.vrt"
         result = build_vrt([synthetic_dem], vrt_path)
         assert result.exists()
@@ -36,23 +36,25 @@ class TestBuildVrt:
 class TestClipDem:
     """Tests for DEM clipping to an AOI."""
 
-    def test_clips_to_aoi(
-        self, synthetic_dem: Path, tmp_dir: Path
-    ) -> None:
+    def test_clips_to_aoi(self, synthetic_dem: Path, tmp_dir: Path) -> None:
         aoi = AOI(
             geometry={
                 "type": "Polygon",
-                "coordinates": [[
-                    [2600050.0, 1200050.0],
-                    [2600150.0, 1200050.0],
-                    [2600150.0, 1200150.0],
-                    [2600050.0, 1200150.0],
-                    [2600050.0, 1200050.0],
-                ]],
+                "coordinates": [
+                    [
+                        [2600050.0, 1200050.0],
+                        [2600150.0, 1200050.0],
+                        [2600150.0, 1200150.0],
+                        [2600050.0, 1200150.0],
+                        [2600050.0, 1200050.0],
+                    ]
+                ],
             },
             bbox=BBox(
-                xmin=2600050.0, ymin=1200050.0,
-                xmax=2600150.0, ymax=1200150.0,
+                xmin=2600050.0,
+                ymin=1200050.0,
+                xmax=2600150.0,
+                ymax=1200150.0,
             ),
         )
 
@@ -61,23 +63,25 @@ class TestClipDem:
         assert result.exists()
         assert result.stat().st_size > 0
 
-    def test_clipped_dem_stats(
-        self, synthetic_dem: Path, tmp_dir: Path
-    ) -> None:
+    def test_clipped_dem_stats(self, synthetic_dem: Path, tmp_dir: Path) -> None:
         aoi = AOI(
             geometry={
                 "type": "Polygon",
-                "coordinates": [[
-                    [2600050.0, 1200050.0],
-                    [2600150.0, 1200050.0],
-                    [2600150.0, 1200150.0],
-                    [2600050.0, 1200150.0],
-                    [2600050.0, 1200050.0],
-                ]],
+                "coordinates": [
+                    [
+                        [2600050.0, 1200050.0],
+                        [2600150.0, 1200050.0],
+                        [2600150.0, 1200150.0],
+                        [2600050.0, 1200150.0],
+                        [2600050.0, 1200050.0],
+                    ]
+                ],
             },
             bbox=BBox(
-                xmin=2600050.0, ymin=1200050.0,
-                xmax=2600150.0, ymax=1200150.0,
+                xmin=2600050.0,
+                ymin=1200050.0,
+                xmax=2600150.0,
+                ymax=1200150.0,
             ),
         )
 

@@ -10,13 +10,16 @@ All operations use GDAL via rasterio and the osgeo.gdal utilities.
 
 from __future__ import annotations
 
+import json
 import logging
+import os
 import subprocess
 import tempfile
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from keyline_planner.engine.models import AOI
+if TYPE_CHECKING:
+    from keyline_planner.engine.models import AOI
 
 logger = logging.getLogger(__name__)
 
@@ -82,12 +85,17 @@ def clip_dem(
 
     cmd = [
         "gdalwarp",
-        "-cutline", str(cutline_path),
+        "-cutline",
+        str(cutline_path),
         "-crop_to_cutline",
-        "-dstnodata", str(nodata),
-        "-of", "GTiff",
-        "-co", "COMPRESS=LZW",
-        "-co", "TILED=YES",
+        "-dstnodata",
+        str(nodata),
+        "-of",
+        "GTiff",
+        "-co",
+        "COMPRESS=LZW",
+        "-co",
+        "TILED=YES",
         str(raster_path),
         str(output_path),
     ]
@@ -126,31 +134,36 @@ def get_dem_stats(dem_path: Path) -> dict[str, Any]:
 def _write_cutline_geojson(aoi: AOI) -> Path:
     """Write AOI geometry to a temporary GeoJSON file for use as a GDAL cutline.
 
+    GeoJSON is defined as WGS84 by RFC 7946. If the AOI geometry is in LV95
+    (EPSG:2056), we reproject to WGS84 so that GDAL correctly interprets the
+    cutline coordinates.
+
     Args:
         aoi: Area of interest with geometry.
 
     Returns:
         Path to the temporary GeoJSON file.
     """
-    import json
+    from keyline_planner.engine.geometry import reproject_geometry
+    from keyline_planner.engine.models import CRS
+
+    # Reproject LV95 geometry to WGS84 for GeoJSON spec compliance
+    geometry_wgs84 = reproject_geometry(aoi.geometry, CRS.LV95, CRS.WGS84)
 
     geojson = {
         "type": "FeatureCollection",
-        "features": [{
-            "type": "Feature",
-            "geometry": aoi.geometry,
-            "properties": {},
-        }],
+        "features": [
+            {
+                "type": "Feature",
+                "geometry": geometry_wgs84,
+                "properties": {},
+            }
+        ],
     }
 
-    # Use a named temp file that persists until process end
-    tmp = tempfile.NamedTemporaryFile(
-        mode="w",
-        suffix=".geojson",
-        prefix="keyline_cutline_",
-        delete=False,
-    )
-    json.dump(geojson, tmp)
-    tmp.close()
+    # Use mkstemp for a named temp file that persists until process end
+    tmp_fd, tmp_name = tempfile.mkstemp(suffix=".geojson", prefix="keyline_cutline_")
+    with os.fdopen(tmp_fd, "w") as tmp:
+        json.dump(geojson, tmp)
 
-    return Path(tmp.name)
+    return Path(tmp_name)

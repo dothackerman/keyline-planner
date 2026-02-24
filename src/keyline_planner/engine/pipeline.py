@@ -14,15 +14,17 @@ from __future__ import annotations
 import json
 import logging
 import time
-from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from keyline_planner.engine.cache import TileCache
-from keyline_planner.engine.contours import count_contours, generate_contours, get_elevation_range
+from keyline_planner.engine.contours import count_contours, generate_contours
 from keyline_planner.engine.geometry import normalise_aoi
 from keyline_planner.engine.models import CRS, ContourParams, ProcessingResult, Resolution
 from keyline_planner.engine.raster import build_vrt, clip_dem, get_dem_stats
 from keyline_planner.engine.tiles import discover_tiles
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -112,7 +114,7 @@ def run_contour_pipeline(
 
     dem_stats = get_dem_stats(dem_clip_path)
     elevation_range = (dem_stats["min"], dem_stats["max"])
-    logger.info("DEM elevation range: %.1f – %.1f m", *elevation_range)
+    logger.info("DEM elevation range: %.1f - %.1f m", *elevation_range)
 
     # --- Step 7: Generate contours ---
     logger.info("Step 6/6: Generating contours")

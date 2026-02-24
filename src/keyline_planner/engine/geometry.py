@@ -17,16 +17,11 @@ from pyproj import Transformer
 from shapely.geometry import mapping, shape
 from shapely.ops import transform
 
-from keyline_planner.engine.models import AOI, BBox, CRS
-
+from keyline_planner.engine.models import AOI, CRS, BBox
 
 # Cached transformers (thread-safe, stateless after creation)
-_TRANSFORMER_WGS84_TO_LV95 = Transformer.from_crs(
-    CRS.WGS84.value, CRS.LV95.value, always_xy=True
-)
-_TRANSFORMER_LV95_TO_WGS84 = Transformer.from_crs(
-    CRS.LV95.value, CRS.WGS84.value, always_xy=True
-)
+_TRANSFORMER_WGS84_TO_LV95 = Transformer.from_crs(CRS.WGS84.value, CRS.LV95.value, always_xy=True)
+_TRANSFORMER_LV95_TO_WGS84 = Transformer.from_crs(CRS.LV95.value, CRS.WGS84.value, always_xy=True)
 
 # Swiss LV95 approximate bounds (for sanity checks)
 _LV95_BOUNDS = BBox(
@@ -125,13 +120,15 @@ def bbox_to_geometry(bbox: BBox) -> dict[str, Any]:
     """
     return {
         "type": "Polygon",
-        "coordinates": [[
-            [bbox.xmin, bbox.ymin],
-            [bbox.xmax, bbox.ymin],
-            [bbox.xmax, bbox.ymax],
-            [bbox.xmin, bbox.ymax],
-            [bbox.xmin, bbox.ymin],
-        ]],
+        "coordinates": [
+            [
+                [bbox.xmin, bbox.ymin],
+                [bbox.xmax, bbox.ymin],
+                [bbox.xmax, bbox.ymax],
+                [bbox.xmin, bbox.ymax],
+                [bbox.xmin, bbox.ymin],
+            ]
+        ],
     }
 
 
