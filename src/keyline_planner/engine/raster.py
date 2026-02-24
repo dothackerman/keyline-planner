@@ -87,6 +87,8 @@ def clip_dem(
         cmd = [
             "gdalwarp",
             "-overwrite",
+            "-r",
+            "bilinear",  # Smooth resampling for better contours
             "-t_srs",
             "EPSG:2056",  # Ensure output is in LV95
             "-cutline",

@@ -47,3 +47,28 @@ Standardize the use of `ctx.ensure_object(dict)` in the main callback for any fl
 - Related Files: [src/keyline_planner/cli/main.py](src/keyline_planner/cli/main.py)
 - Tags: typer, cli, global-flags
 - Resolution: [2026-02-24] Refactored `verbose` to `app.callback` and used `ctx.obj` for state sharing.
+
+---
+
+## [LRN-20260224-003] DEM Resampling for Contouring
+
+**Logged**: 2026-02-24T13:15:00Z
+**Priority**: high
+**Status**: resolved
+**Area**: engine
+
+### Summary
+Nearest-neighbor resampling during DEM clipping creates "staircase" artifacts that ruin contour quality.
+
+### Details
+Using the default `near` resampling in `gdalwarp` keeps pixel edges sharp, which leads to "pixelated" hillshades and jagged, stair-steppy contours. Switching to `bilinear` or `cubic` resampling during the `clip_dem` phase produces a smooth surface that leads to natural-looking contours.
+
+### Suggested Action
+Always use `-r bilinear` or `-r cubic` in `gdalwarp` when the target raster is intended for slope analysis or contour extraction.
+
+### Metadata
+- Layer: 1
+- Source: user_feedback
+- Related Files: [src/keyline_planner/engine/raster.py](src/keyline_planner/engine/raster.py)
+- Tags: gdal, dem, resampling, contours
+- Resolution: [2026-02-24] Switched gdalwarp to use `-r bilinear` in `clip_dem`.
