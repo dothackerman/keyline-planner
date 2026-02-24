@@ -73,7 +73,15 @@ def generate_contours(
         params.interval,
         params.attribute_name,
     )
-    subprocess.run(cmd, check=True, capture_output=True, text=True)
+    try:
+        subprocess.run(cmd, check=True, capture_output=True, text=True)
+    except subprocess.CalledProcessError as exc:
+        logger.error("gdal_contour failed with exit code %s", exc.returncode)
+        if exc.stderr:
+            logger.error("gdal_contour stderr:\n%s", exc.stderr.strip())
+        if exc.stdout:
+            logger.debug("gdal_contour stdout:\n%s", exc.stdout.strip())
+        raise
 
     # Read raw contours
     raw_geojson = json.loads(Path(tmp_name).read_text())
