@@ -1,3 +1,5 @@
+📍 **[arc42](README.md)** › Solution Strategy
+
 # 4. Solution Strategy
 
 ## 4.1 Technology Decisions
@@ -39,3 +41,8 @@ battle-tested, well-documented operations with predictable behaviour.
 | Testability | Synthetic DEMs for offline testing; CliRunner for E2E |
 | Modularity | Each engine module has a single responsibility; no cross-dependencies |
 | Developer UX | Default 2m resolution (~1MB/tile); clear error messages |
+
+---
+
+**Navigation:**  
+⬅️ [Previous: Context & Scope](03-context-scope.md) · [Overview](README.md) · [Next: Building Blocks](05-building-blocks.md) ➡️

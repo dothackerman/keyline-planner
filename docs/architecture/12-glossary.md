@@ -1,3 +1,5 @@
+📍 **[arc42](README.md)** › Glossary
+
 # 12. Glossary
 
 | Term | Definition |
@@ -20,3 +22,8 @@
 | **swissALTI3D** | High-precision digital elevation model of Switzerland published by swisstopo |
 | **swisstopo** | Federal Office of Topography — Swiss national mapping agency |
 | **VRT** | GDAL Virtual Format — a lightweight mosaic definition that references source rasters without copying data |
+
+---
+
+**Navigation:**  
+⬅️ [Previous: Risks & Technical Debt](11-risks.md) · [Overview](README.md)

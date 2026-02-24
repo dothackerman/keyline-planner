@@ -1,3 +1,5 @@
+📍 **[arc42](README.md)** › Crosscutting Concepts
+
 # 8. Crosscutting Concepts
 
 ## 8.1 Determinism
@@ -59,3 +61,8 @@ Three test levels aligned with the two-layer model:
 
 Golden-file regression testing via `pytest-regressions` for contour output stability.
 Performance regression tracking via `pytest-benchmark`.
+
+---
+
+**Navigation:**  
+⬅️ [Previous: Building Blocks](05-building-blocks.md) · [Overview](README.md) · [Next: Architecture Decisions](09-decisions.md) ➡️

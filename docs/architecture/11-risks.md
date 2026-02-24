@@ -1,3 +1,5 @@
+📍 **[arc42](README.md)** › Risks and Technical Debt
+
 # 11. Risks and Technical Debt
 
 ## 11.1 Technical Risks
@@ -19,3 +21,8 @@
 | No retry logic for tile downloads | Low | Add exponential backoff in cache.py |
 | No CLI progress bars for long operations | Low | Add Rich progress bars in Milestone 1.1 |
 | STAC API URL hardcoded | Low | Move to configuration file |
+
+---
+
+**Navigation:**  
+⬅️ [Previous: Quality Requirements](10-quality.md) · [Overview](README.md) · [Next: Glossary](12-glossary.md) ➡️

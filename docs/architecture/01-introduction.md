@@ -1,3 +1,5 @@
+📍 **[arc42](README.md)** › Introduction
+
 # 1. Introduction and Goals
 
 ## 1.1 Requirements Overview
@@ -38,3 +40,8 @@ The immediate goal is a functional CLI that:
 | **Planner** (primary user) | Stable CLI that produces usable contour data for keyline design |
 | **Agent** (developer) | Clear contracts, measurable improvement loops, safe-to-modify codebase |
 | **Human reviewer** | Architecture docs as negotiation boundary; testable before engagement |
+
+---
+
+**Navigation:**  
+↩️ [Back to overview](README.md) · [Next: Constraints](02-constraints.md) ➡️

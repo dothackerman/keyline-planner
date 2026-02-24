@@ -111,6 +111,28 @@ def geometry_to_bbox(geojson: dict[str, Any], crs: CRS = CRS.LV95) -> BBox:
     )
 
 
+def reproject_bbox(
+    bbox: BBox,
+    target_crs: CRS,
+) -> BBox:
+    """Reproject a BBox from its current CRS to a target CRS.
+
+    Args:
+        bbox: Bounding box to reproject.
+        target_crs: Target coordinate reference system.
+
+    Returns:
+        Reprojected BBox.
+    """
+    if bbox.crs == target_crs:
+        return bbox
+
+    # Convert bbox to geometry, reproject, extract bounds
+    geojson = bbox_to_geometry(bbox)
+    reprojected_geojson = reproject_geometry(geojson, source_crs=bbox.crs, target_crs=target_crs)
+    return geometry_to_bbox(reprojected_geojson, crs=target_crs)
+
+
 def bbox_to_geometry(bbox: BBox) -> dict[str, Any]:
     """Convert a BBox to a GeoJSON Polygon geometry.
 

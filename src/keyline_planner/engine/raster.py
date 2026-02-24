@@ -86,6 +86,9 @@ def clip_dem(
     try:
         cmd = [
             "gdalwarp",
+            "-overwrite",
+            "-t_srs",
+            "EPSG:2056",  # Ensure output is in LV95
             "-cutline",
             str(cutline_path),
             "-crop_to_cutline",
@@ -102,7 +105,15 @@ def clip_dem(
         ]
 
         logger.info("Clipping DEM to AOI → %s", output_path)
-        subprocess.run(cmd, check=True, capture_output=True, text=True)
+        result = subprocess.run(cmd, check=False, capture_output=True, text=True)
+
+        if result.returncode != 0:
+            logger.error("gdalwarp stderr: %s", result.stderr)
+            logger.error("gdalwarp stdout: %s", result.stdout)
+            msg = f"gdalwarp failed: {result.stderr}"
+            raise subprocess.CalledProcessError(
+                result.returncode, cmd, result.stdout, result.stderr
+            )
 
         return output_path
     finally:
@@ -138,12 +149,11 @@ def get_dem_stats(dem_path: Path) -> dict[str, Any]:
 def _write_cutline_geojson(aoi: AOI) -> Path:
     """Write AOI geometry to a temporary GeoJSON file for use as a GDAL cutline.
 
-    GeoJSON is defined as WGS84 by RFC 7946. If the AOI geometry is in LV95
-    (EPSG:2056), we reproject to WGS84 so that GDAL correctly interprets the
-    cutline coordinates.
+    GeoJSON is defined as WGS84 by RFC 7946. Convert the AOI from LV95 to WGS84
+    so that GDAL correctly interprets the cutline coordinates.
 
     Args:
-        aoi: Area of interest with geometry.
+        aoi: Area of interest with geometry (in LV95).
 
     Returns:
         Path to the temporary GeoJSON file.

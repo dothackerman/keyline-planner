@@ -15,7 +15,11 @@ import logging
 from typing import Any
 
 from pystac_client import Client
+from pystac_client.exceptions import APIError
+from pystac_client.warnings import DoesNotConformTo
+from requests.exceptions import RequestException
 
+from keyline_planner.engine.geometry import reproject_bbox
 from keyline_planner.engine.models import AOI, CRS, Resolution, TileInfo
 
 logger = logging.getLogger(__name__)
@@ -58,28 +62,55 @@ def discover_tiles(
         ValueError: If no tiles are found for the given AOI.
     """
     target_gsd = _ASSET_GSD_MAP[resolution]
-    bbox = aoi.bbox.as_tuple()
+
+    # Convert AOI from LV95 to WGS84 for STAC API query
+    wgs84_bbox = reproject_bbox(aoi.bbox, target_crs=CRS.WGS84)
+    bbox = wgs84_bbox.as_tuple()
 
     logger.info(
-        "Discovering tiles: collection=%s, bbox=%s, gsd=%.1f",
+        "Discovering tiles: collection=%s, bbox=%s (WGS84), gsd=%.1f",
         collection,
         bbox,
         target_gsd,
     )
 
-    client = Client.open(stac_url)
+    try:
+        client = Client.open(stac_url)
 
-    # Search for items overlapping the AOI bbox
-    search = client.search(
-        collections=[collection],
-        bbox=bbox,
-    )
+        # Some STAC servers expose /search but do not advertise ITEM_SEARCH
+        # conformance in landing-page metadata. Retry once with explicit override.
+        try:
+            search = client.search(
+                collections=[collection],
+                bbox=bbox,
+            )
+        except DoesNotConformTo as exc:
+            logger.warning(
+                "STAC conformance metadata incomplete (%s). Retrying with ITEM_SEARCH override.",
+                exc,
+            )
+            client.add_conforms_to("ITEM_SEARCH")
+            search = client.search(
+                collections=[collection],
+                bbox=bbox,
+            )
 
-    tiles: list[TileInfo] = []
-    for item in search.items():
-        tile = _parse_stac_item(item, target_gsd=target_gsd)
-        if tile is not None:
-            tiles.append(tile)
+        tiles: list[TileInfo] = []
+        for item in search.items():
+            tile = _parse_stac_item(item, target_gsd=target_gsd)
+            if tile is not None:
+                tiles.append(tile)
+    except (RequestException, APIError) as exc:
+        logger.error(
+            "STAC API error: %s: %s",
+            type(exc).__name__,
+            str(exc),
+        )
+        msg = (
+            f"Failed to reach STAC API at {stac_url}. "
+            f"Underlying error: {type(exc).__name__}: {str(exc)}"
+        )
+        raise ConnectionError(msg) from exc
 
     if not tiles:
         msg = (

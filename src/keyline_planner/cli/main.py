@@ -57,16 +57,25 @@ def version_callback(value: bool) -> None:
 
 @app.callback()
 def main(
+    ctx: typer.Context,
+    verbose: Annotated[
+        bool,
+        typer.Option("--verbose", "-v", help="Enable verbose/debug logging."),
+    ] = False,
     version: Annotated[
         bool | None,
         typer.Option("--version", "-V", help="Show version and exit.", callback=version_callback),
     ] = None,
 ) -> None:
     """Keyline Planner — Swiss contour generation for keyline design."""
+    _setup_logging(verbose)
+    ctx.ensure_object(dict)
+    ctx.obj["verbose"] = verbose
 
 
 @app.command()
 def contours(
+    ctx: typer.Context,
     bbox: Annotated[
         str | None,
         typer.Option(
@@ -117,10 +126,6 @@ def contours(
         bool,
         typer.Option("--no-dem", help="Don't save the clipped DEM raster."),
     ] = False,
-    verbose: Annotated[
-        bool,
-        typer.Option("--verbose", "-v", help="Enable verbose/debug logging."),
-    ] = False,
 ) -> None:
     """Generate contour lines from Swiss elevation data for a given AOI.
 
@@ -128,7 +133,7 @@ def contours(
     Results are written to the output directory as GeoJSON contours,
     an optional clipped DEM, and a provenance manifest.
     """
-    _setup_logging(verbose)
+    verbose = ctx.obj["verbose"]
 
     # --- Parse inputs ---
     if bbox is None and geojson_file is None:
@@ -201,6 +206,13 @@ def contours(
             cache_root=cache_dir,
             save_clipped_dem=not no_dem,
         )
+    except ConnectionError as e:
+        console.print(f"[red]Pipeline error:[/] {e}")
+        console.print(
+            "[yellow]Hint:[/] Verify DNS/network access to the Swiss STAC endpoint "
+            "(data.geo.admin.ch)."
+        )
+        raise typer.Exit(code=1) from e
     except Exception as e:
         console.print(f"[red]Pipeline error:[/] {e}")
         if verbose:

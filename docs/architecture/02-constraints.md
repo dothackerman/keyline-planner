@@ -1,3 +1,5 @@
+📍 **[arc42](README.md)** › Constraints
+
 # 2. Constraints
 
 ## 2.1 Technical Constraints
@@ -26,3 +28,8 @@
 | arc42 documentation | Human-readable architecture docs as negotiation boundary |
 | Conventional commits | `feat:`, `fix:`, `docs:`, `test:`, `refactor:`, `ci:` prefixes |
 | Test markers | `@pytest.mark.unit`, `integration`, `e2e`, `benchmark`, `network` |
+
+---
+
+**Navigation:**  
+⬅️ [Previous: Introduction](01-introduction.md) · [Overview](README.md) · [Next: Context & Scope](03-context-scope.md) ➡️

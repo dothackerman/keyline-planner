@@ -1,3 +1,5 @@
+📍 **[arc42](README.md)** › Architecture Decisions
+
 # 9. Architecture Decisions
 
 ## ADR-001: CLI-First Interface for Milestone 1
@@ -84,3 +86,8 @@ with checksum verification against STAC metadata.
 **Consequences**:
 - Users wanting maximum detail must explicitly opt in
 - Some contour artifacts may differ between resolutions
+
+---
+
+**Navigation:**  
+⬅️ [Previous: Crosscutting Concepts](08-crosscutting.md) · [Overview](README.md) · [Next: Quality Requirements](10-quality.md) ➡️

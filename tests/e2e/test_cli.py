@@ -105,12 +105,9 @@ class TestCLIGeojsonParsing:
                 }
             )
         )
-        # This will fail at the pipeline step (no STAC), but it should
-        # parse the GeoJSON successfully — exit code 1 from pipeline, not parsing
+        # Verify that Feature-wrapped geometries are correctly parsed and processed
         result = runner.invoke(app, ["contours", "--geojson", str(path)])
-        assert result.exit_code == 1
-        # Should NOT contain "Failed to parse GeoJSON"
-        assert "Failed to parse GeoJSON" not in result.output
+        assert result.exit_code == 0
 
     def test_loads_feature_collection(
         self, tmp_dir: Path, sample_polygon_lv95: dict[str, Any]
@@ -130,16 +127,16 @@ class TestCLIGeojsonParsing:
                 }
             )
         )
+        # Verify that FeatureCollection-wrapped geometries are correctly parsed and processed
         result = runner.invoke(app, ["contours", "--geojson", str(path)])
-        assert result.exit_code == 1
-        assert "Failed to parse GeoJSON" not in result.output
+        assert result.exit_code == 0
 
     def test_loads_raw_geometry(self, tmp_dir: Path, sample_polygon_lv95: dict[str, Any]) -> None:
         path = tmp_dir / "raw.geojson"
         path.write_text(json.dumps(sample_polygon_lv95))
+        # Verify that raw geometry (without Feature/FeatureCollection wrapper) is correctly parsed and processed
         result = runner.invoke(app, ["contours", "--geojson", str(path)])
-        assert result.exit_code == 1
-        assert "Failed to parse GeoJSON" not in result.output
+        assert result.exit_code == 0
 
     def test_invalid_json_shows_error(self, tmp_dir: Path) -> None:
         path = tmp_dir / "bad.geojson"

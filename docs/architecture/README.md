@@ -7,6 +7,26 @@ This is the **human-agent negotiation boundary**: the documentation here
 represents human intent and architectural constraints that agents must
 respect when making implementation decisions.
 
+---
+
+## 📖 Quick Navigation
+
+**Start here:** [1. Introduction and Goals](01-introduction.md)
+
+**Read in sequence:**
+1. [Introduction and Goals →](01-introduction.md)
+2. [Constraints →](02-constraints.md)
+3. [Context and Scope →](03-context-scope.md)
+4. [Solution Strategy →](04-solution-strategy.md)
+5. [Building Blocks →](05-building-blocks.md)
+6. [Crosscutting Concepts →](08-crosscutting.md)  *(sections 6 & 7 planned)*
+7. [Architecture Decisions →](09-decisions.md)
+8. [Quality Requirements →](10-quality.md)
+9. [Risks and Technical Debt →](11-risks.md)
+10. [Glossary →](12-glossary.md)
+
+---
+
 ## Structure
 
 | Section | File | Status |
