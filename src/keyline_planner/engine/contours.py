@@ -231,7 +231,7 @@ def _round_geometry_coords(
         Geometry dict with rounded coordinates.
     """
 
-    def _round_coords(coords: list | float) -> list | float:
+    def _round_coords(coords: list[Any] | float) -> list[Any] | float:
         if isinstance(coords, (list, tuple)):
             if coords and isinstance(coords[0], (int, float)):
                 return [round(c, precision) for c in coords]

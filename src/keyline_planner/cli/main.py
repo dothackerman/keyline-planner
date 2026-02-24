@@ -157,7 +157,7 @@ def contours(
 
     # Parse bbox or load geojson
     parsed_bbox: tuple[float, float, float, float] | None = None
-    parsed_geojson: dict | None = None
+    parsed_geojson: dict[str, object] | None = None
 
     if bbox is not None:
         try:

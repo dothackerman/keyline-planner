@@ -12,6 +12,7 @@ behind a clean interface that can be mocked in tests.
 from __future__ import annotations
 
 import logging
+from typing import Any
 
 from pystac_client import Client
 
@@ -92,7 +93,7 @@ def discover_tiles(
 
 
 def _parse_stac_item(
-    item: object,
+    item: Any,  # noqa: ANN401
     target_gsd: float,
 ) -> TileInfo | None:
     """Parse a STAC Item into a TileInfo, filtering by GSD.

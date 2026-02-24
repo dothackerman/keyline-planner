@@ -116,8 +116,16 @@ module = [
     "osgeo.*",
     "pystac_client.*",
     "geojson.*",
+    "pyproj.*",
+    "shapely.*",
+    "typer.*",
+    "rich.*",
 ]
 ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["keyline_planner.cli.*"]
+disable_error_code = ["misc"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
