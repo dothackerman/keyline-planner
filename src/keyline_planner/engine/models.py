@@ -35,6 +35,14 @@ class Resolution(Enum):
     STANDARD = 2.0  # 2.0 m — default, ~1 MB/tile
 
 
+class OutputFormat(Enum):
+    """Supported contour output formats."""
+
+    GPKG = "gpkg"
+    GEOJSON = "geojson"
+    BOTH = "both"
+
+
 @dataclass(frozen=True)
 class BBox:
     """Axis-aligned bounding box in a specific CRS.
@@ -204,5 +212,7 @@ class ProcessingResult:
     elevation_range: tuple[float, float]
     aoi_hash: str
     params: ContourParams
+    contours_gpkg_path: Path | None = None
+    contours_geojson_path: Path | None = None
     tile_ids: list[str] = field(default_factory=list)
     attribution: str = "Source: Federal Office of Topography swisstopo"

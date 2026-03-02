@@ -23,7 +23,7 @@ from rich.logging import RichHandler
 from rich.table import Table
 
 from keyline_planner import __version__
-from keyline_planner.engine.models import CRS, Resolution
+from keyline_planner.engine.models import CRS, OutputFormat, Resolution
 from keyline_planner.engine.pipeline import run_contour_pipeline
 
 app = typer.Typer(
@@ -114,6 +114,13 @@ def contours(
         float,
         typer.Option("--simplify", "-s", help="Simplification tolerance in CRS units (0=none)."),
     ] = 0.0,
+    output_format: Annotated[
+        str,
+        typer.Option(
+            "--format",
+            help="Contour output format: 'gpkg' (default), 'geojson', or 'both'.",
+        ),
+    ] = "gpkg",
     output_dir: Annotated[
         Path | None,
         typer.Option("--output", "-o", help="Output directory for results."),
@@ -160,6 +167,20 @@ def contours(
         )
         raise typer.Exit(code=1)
 
+    # Parse output format
+    format_map = {
+        "gpkg": OutputFormat.GPKG,
+        "geojson": OutputFormat.GEOJSON,
+        "both": OutputFormat.BOTH,
+    }
+    input_output_format = format_map.get(output_format.lower())
+    if input_output_format is None:
+        console.print(
+            f"[red]Error:[/] Unknown output format '{output_format}'. "
+            "Use 'gpkg', 'geojson', or 'both'."
+        )
+        raise typer.Exit(code=1)
+
     # Parse bbox or load geojson
     parsed_bbox: tuple[float, float, float, float] | None = None
     parsed_geojson: dict[str, object] | None = None
@@ -202,6 +223,7 @@ def contours(
             interval=interval,
             resolution=input_resolution,
             simplify_tolerance=simplify,
+            output_format=input_output_format,
             output_dir=output_dir,
             cache_root=cache_dir,
             save_clipped_dem=not no_dem,
@@ -223,12 +245,17 @@ def contours(
     table = Table(title="Contour Generation Results", show_header=False, pad_edge=False)
     table.add_column("Key", style="bold cyan")
     table.add_column("Value")
-    table.add_row("Contours", str(result.contours_path))
+    table.add_row("Contours (Primary)", str(result.contours_path))
+    if result.contours_gpkg_path is not None:
+        table.add_row("Contours (GPKG)", str(result.contours_gpkg_path))
+    if result.contours_geojson_path is not None:
+        table.add_row("Contours (GeoJSON)", str(result.contours_geojson_path))
     table.add_row("Count", f"{result.contour_count} contour lines")
     elev_lo, elev_hi = result.elevation_range
     table.add_row("Elevation", f"{elev_lo:.1f} - {elev_hi:.1f} m")
     table.add_row("Interval", f"{interval} m")
     table.add_row("Resolution", f"{input_resolution.value} m")
+    table.add_row("Format", input_output_format.value)
     table.add_row("AOI Hash", result.aoi_hash)
     table.add_row("Tiles Used", ", ".join(result.tile_ids))
     if result.clipped_dem_path:
