@@ -14,6 +14,7 @@ import pytest
 from typer.testing import CliRunner
 
 from keyline_planner.cli.main import app
+from keyline_planner.engine.geometry import point_to_square_bbox_lv95
 from keyline_planner.engine.models import CRS, ContourParams, OutputFormat, Resolution
 
 if TYPE_CHECKING:
@@ -42,6 +43,8 @@ class TestCLIBasics:
         assert result.exit_code == 0
         assert "--bbox" in result.output
         assert "--geojson" in result.output
+        assert "--point" in result.output
+        assert "--extent-m" in result.output
 
 
 class TestCLIValidation:
@@ -51,21 +54,54 @@ class TestCLIValidation:
         result = runner.invoke(app, ["contours"])
         assert result.exit_code == 1
 
-    def test_both_inputs_shows_error(self, sample_geojson_file: Path) -> None:
-        result = runner.invoke(
-            app,
+    @pytest.mark.parametrize(
+        "argv",
+        [
             [
                 "contours",
                 "--bbox",
                 "2600000,1200000,2601000,1201000",
                 "--geojson",
-                str(sample_geojson_file),
+                "dummy.geojson",
             ],
-        )
+            [
+                "contours",
+                "--bbox",
+                "2600000,1200000,2601000,1201000",
+                "--point",
+                "2600500,1200500",
+            ],
+            [
+                "contours",
+                "--geojson",
+                "dummy.geojson",
+                "--point",
+                "2600500,1200500",
+            ],
+            [
+                "contours",
+                "--bbox",
+                "2600000,1200000,2601000,1201000",
+                "--geojson",
+                "dummy.geojson",
+                "--point",
+                "2600500,1200500",
+            ],
+        ],
+    )
+    def test_multiple_aoi_inputs_show_error(
+        self, argv: list[str], sample_geojson_file: Path
+    ) -> None:
+        args = [str(sample_geojson_file) if value == "dummy.geojson" else value for value in argv]
+        result = runner.invoke(app, args)
         assert result.exit_code == 1
 
     def test_invalid_bbox_format(self) -> None:
         result = runner.invoke(app, ["contours", "--bbox", "not,valid"])
+        assert result.exit_code == 1
+
+    def test_invalid_point_format(self) -> None:
+        result = runner.invoke(app, ["contours", "--point", "not,valid,shape"])
         assert result.exit_code == 1
 
     def test_invalid_crs(self) -> None:
@@ -180,6 +216,55 @@ class TestCLISuccessPaths:
         assert kwargs["output_dir"] == output_dir
         assert kwargs["cache_root"] == cache_dir
         assert kwargs["save_clipped_dem"] is False
+
+    def test_point_wgs84_invokes_pipeline_with_derived_lv95_bbox(
+        self,
+        mock_run_contour_pipeline_success: list[dict[str, Any]],
+    ) -> None:
+        result = runner.invoke(
+            app,
+            [
+                "contours",
+                "--point",
+                "47.099516,8.131196",
+                "--crs",
+                "wgs84",
+                "--extent-m",
+                "200",
+            ],
+        )
+        assert result.exit_code == 0
+        assert len(mock_run_contour_pipeline_success) == 1
+
+        kwargs = mock_run_contour_pipeline_success[0]
+        expected_bbox = point_to_square_bbox_lv95(
+            point=(8.131196, 47.099516),  # lon,lat
+            extent_m=200.0,
+            crs=CRS.WGS84,
+        ).as_tuple()
+        assert kwargs["bbox"] == pytest.approx(expected_bbox)
+        assert kwargs["geojson"] is None
+        assert kwargs["crs"] == CRS.LV95
+
+    def test_point_lv95_uses_default_extent_100m(
+        self,
+        mock_run_contour_pipeline_success: list[dict[str, Any]],
+    ) -> None:
+        result = runner.invoke(
+            app,
+            [
+                "contours",
+                "--point",
+                "2600500,1200500",
+            ],
+        )
+        assert result.exit_code == 0
+        assert len(mock_run_contour_pipeline_success) == 1
+
+        kwargs = mock_run_contour_pipeline_success[0]
+        assert kwargs["bbox"] == (2_600_400.0, 1_200_400.0, 2_600_600.0, 1_200_600.0)
+        assert kwargs["geojson"] is None
+        assert kwargs["crs"] == CRS.LV95
 
     def test_both_format_displays_both_paths_and_primary_stdout(
         self,

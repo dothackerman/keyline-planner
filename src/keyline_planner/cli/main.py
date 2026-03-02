@@ -6,6 +6,7 @@ for human consumption.
 
 Usage:
     keyline contours --bbox "2600000,1200000,2601000,1201000"
+    keyline contours --point "47.099516,8.131196" --crs wgs84 --extent-m 200
     keyline contours --geojson parcel.geojson --interval 2.0
     keyline contours --geojson parcel.geojson --resolution high
 """
@@ -23,6 +24,7 @@ from rich.logging import RichHandler
 from rich.table import Table
 
 from keyline_planner import __version__
+from keyline_planner.engine.geometry import point_to_square_bbox_lv95
 from keyline_planner.engine.models import CRS, OutputFormat, Resolution
 from keyline_planner.engine.pipeline import run_contour_pipeline
 
@@ -94,6 +96,18 @@ def contours(
             readable=True,
         ),
     ] = None,
+    point: Annotated[
+        str | None,
+        typer.Option(
+            "--point",
+            "-p",
+            help='Center point as "x,y" in lv95 or "lat,lon" in wgs84.',
+        ),
+    ] = None,
+    extent_m: Annotated[
+        float,
+        typer.Option("--extent-m", help="Half-side extent in meters for --point AOI."),
+    ] = 100.0,
     interval: Annotated[
         float,
         typer.Option("--interval", "-i", help="Contour interval in meters."),
@@ -136,19 +150,19 @@ def contours(
 ) -> None:
     """Generate contour lines from Swiss elevation data for a given AOI.
 
-    Provide either --bbox or --geojson to define the area of interest.
+    Provide exactly one of --bbox, --geojson, or --point to define the AOI.
     Results are written to the output directory as GeoJSON contours,
     an optional clipped DEM, and a provenance manifest.
     """
     verbose = ctx.obj["verbose"]
 
     # --- Parse inputs ---
-    if bbox is None and geojson_file is None:
-        console.print("[red]Error:[/] Provide either --bbox or --geojson", style="bold")
-        raise typer.Exit(code=1)
-
-    if bbox is not None and geojson_file is not None:
-        console.print("[red]Error:[/] Provide either --bbox or --geojson, not both", style="bold")
+    input_count = sum(value is not None for value in (bbox, geojson_file, point))
+    if input_count != 1:
+        console.print(
+            "[red]Error:[/] Provide exactly one of --bbox, --geojson, or --point",
+            style="bold",
+        )
         raise typer.Exit(code=1)
 
     # Parse CRS
@@ -181,7 +195,7 @@ def contours(
         )
         raise typer.Exit(code=1)
 
-    # Parse bbox or load geojson
+    # Parse bbox/point or load geojson
     parsed_bbox: tuple[float, float, float, float] | None = None
     parsed_geojson: dict[str, object] | None = None
 
@@ -194,6 +208,24 @@ def contours(
             parsed_bbox = (parts[0], parts[1], parts[2], parts[3])
         except (ValueError, IndexError) as e:
             console.print(f"[red]Error:[/] Invalid bbox format: {e}")
+            raise typer.Exit(code=1) from e
+
+    if point is not None:
+        try:
+            parts = [float(x.strip()) for x in point.split(",")]
+            if len(parts) != 2:
+                msg = "Expected 2 values"
+                raise ValueError(msg)
+            # In WGS84, CLI accepts lat,lon for user ergonomics.
+            if input_crs == CRS.WGS84:
+                point_xy = (parts[1], parts[0])  # (lon, lat)
+            else:
+                point_xy = (parts[0], parts[1])  # (x, y)
+            bbox_lv95 = point_to_square_bbox_lv95(point_xy, extent_m=extent_m, crs=input_crs)
+            parsed_bbox = bbox_lv95.as_tuple()
+            input_crs = CRS.LV95
+        except (ValueError, IndexError) as e:
+            console.print(f"[red]Error:[/] Invalid point input: {e}")
             raise typer.Exit(code=1) from e
 
     if geojson_file is not None:
