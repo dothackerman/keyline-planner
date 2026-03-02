@@ -9,7 +9,12 @@ All engine outputs must be reproducible given the same inputs:
 - **Coordinate rounding**: All output coordinates are rounded to 2 decimal
   places (cm precision in LV95) before serialisation.
 - **Feature ordering**: Contour features are sorted by (elevation, minx, miny)
-  to ensure stable GeoJSON output regardless of GDAL's internal ordering.
+  before serialisation to ensure stable output artifacts regardless of GDAL's
+  internal ordering.
+- **CRS-safe defaults**: Default contour output is GeoPackage in LV95
+  (`EPSG:2056`), avoiding CRS ambiguity in GIS tools.
+- **GeoJSON export policy**: When requested, GeoJSON is exported in WGS84
+  (`EPSG:4326`) for standards compliance.
 - **Cache keying**: Cache keys are derived from deterministic hashes of AOI
   geometry and processing parameters.
 - **Provenance manifests**: Every pipeline run writes a `manifest.json`

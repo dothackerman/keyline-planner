@@ -14,6 +14,8 @@ Implemented now (Milestone 1):
 - LV95/WGS84 input support with LV95 processing/output
 - Tile discovery via swisstopo STAC + local tile caching
 - GDAL-based DEM clipping and contour extraction
+- `GeoPackage` contour output by default with embedded LV95 CRS (`contours.gpkg`)
+- Optional `GeoJSON` contour export in WGS84 (`--format geojson|both`)
 - Provenance manifest output (`manifest.json`)
 - Deterministic offline-by-default test suite (unit/integration/E2E with mocks)
 
@@ -62,6 +64,12 @@ keyline contours --geojson parcel.geojson --resolution high --simplify 1.0
 # WGS84 input coordinates
 keyline contours --bbox "7.44,46.94,7.45,46.95" --crs wgs84
 
+# Export WGS84 GeoJSON instead of default GPKG
+keyline contours --bbox "2600000,1200000,2601000,1201000" --format geojson
+
+# Export both GPKG (LV95) and GeoJSON (WGS84)
+keyline contours --bbox "2600000,1200000,2601000,1201000" --format both
+
 # See all options
 keyline contours --help
 ```
@@ -69,7 +77,8 @@ keyline contours --help
 ### Output
 
 Each run produces:
-- `contours.geojson` — contour lines sorted by elevation
+- `contours.gpkg` — default contour output (LV95 CRS embedded)
+- `contours.geojson` — optional WGS84 export (`--format geojson` or `--format both`)
 - `dem_clip.tif` — clipped DEM raster (optional, `--no-dem` to skip)
 - `manifest.json` — provenance metadata (parameters, timing, tile IDs, attribution)
 
@@ -98,22 +107,25 @@ To inspect generated contours on the Swiss national basemap:
    - CRS: `EPSG:2056`
    - Image encoding: `image/png`
 7. Add your generated files:
-   - `contours.geojson`
+   - `contours.gpkg` (default output)
    - optionally `dem_clip.tif`
+   - optionally `contours.geojson` if exported with `--format geojson|both`
 8. Layer order in the Layers panel:
    - Basemap WMS at bottom
    - `dem_clip.tif` above it (optional)
-   - `contours.geojson` on top
+   - `contours.gpkg` on top
 9. Style contours:
-   - Right-click `contours.geojson` -> Properties -> Symbology
+   - Right-click `contours.gpkg` -> Properties -> Symbology
    - Use a high-contrast line color (dark brown/black), width `0.6-1.2 px`
    - Optional labels: label by `elevation`
 10. Zoom and verify:
-   - Right-click `contours.geojson` -> `Zoom to Layer`
+   - Right-click `contours.gpkg` -> `Zoom to Layer`
    - Check contour alignment with ridges/valleys in the basemap.
 
 Troubleshooting:
 - If layers look offset, confirm project CRS and WMS layer CRS are both `EPSG:2056`.
+- Prefer `contours.gpkg` in QGIS when you want LV95 to be unambiguous.
+- If you load `contours.geojson`, remember it is exported in WGS84.
 - If labels are not in your preferred language, change `Lang=` in the WMS URL (`en`, `de`, `fr`, `it`, `rm`).
 - If rendering is slow at national extent, zoom in or switch to WMTS.
 

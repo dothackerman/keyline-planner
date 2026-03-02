@@ -16,7 +16,7 @@ The immediate goal is a functional CLI that:
 2. Fetches Swiss elevation data (swissALTI3D) from swisstopo's STAC API
 3. Caches tiles locally for offline re-use
 4. Generates contour lines at configurable intervals
-5. Outputs GeoJSON contours with provenance metadata
+5. Outputs contour artifacts with provenance metadata (GeoPackage default, optional GeoJSON export)
 
 ### Future Milestones
 

@@ -13,7 +13,7 @@
 | Tile discovery | pystac-client | Purpose-built for STAC API interaction |
 | CLI framework | Typer | Type-hint CLI with built-in test runner |
 | Testing | pytest + pytest-regressions + pytest-benchmark | Golden-file testing + performance regression tracking |
-| Output format | GeoJSON | Human-readable; diff-friendly; widely supported |
+| Output format | GeoPackage (default) + optional GeoJSON export | CRS-safe default in GIS tools; GeoJSON kept for interoperability |
 
 ## 4.2 Architectural Approach
 

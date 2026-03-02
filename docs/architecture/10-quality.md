@@ -68,7 +68,7 @@ graph TD
 | ID | Scenario | Measure | Target |
 |----|----------|---------|--------|
 | QS-1 | Agent modifies contour module | Existing tests pass | 100% |
-| QS-2 | Same AOI processed twice | Contour GeoJSON coordinates/order are deterministic | Always |
+| QS-2 | Same AOI processed twice | Contour artifact content/order are deterministic for selected output format | Always |
 | QS-3 | AOI in WGS84 submitted | Correctly reprojected to LV95 | ±0.01m |
 | QS-4 | Tile download interrupted | Partial file cleaned up; retry works | Always |
 | QS-5 | Flat DEM processed | No crash; 0-1 contours returned | Always |

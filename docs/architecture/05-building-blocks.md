@@ -44,7 +44,7 @@ engine/
 | `tiles` | AOI | List of TileInfo | Network (STAC API) |
 | `cache` | TileInfo list | Local file paths | Disk I/O, Network |
 | `raster` | File paths + AOI | Clipped DEM path | Disk I/O (GDAL) |
-| `contours` | DEM path + params | GeoJSON path | Disk I/O (GDAL) |
+| `contours` | DEM path + params + output format | GPKG path (default) and/or GeoJSON path | Disk I/O (GDAL) |
 | `pipeline` | User params | ProcessingResult | Composes all above |
 
 ### Dependency Graph (Engine Internal)

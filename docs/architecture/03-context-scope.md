@@ -37,7 +37,7 @@ graph TD
     A["📥 User Input<br/>AOI + Parameters"]
     B["🖥️ CLI Adapter<br/>Parse args → Call Engine"]
     C["⚙️ Engine Pipeline<br/><br/>1️⃣ Normalise AOI<br/>2️⃣ Discover Tiles<br/>3️⃣ Cache Tiles<br/>4️⃣ Build VRT Mosaic<br/>5️⃣ Clip DEM<br/>6️⃣ Generate Contours<br/>7️⃣ Write Outputs"]
-    D["📊 Processing Result<br/>GeoJSON Contours<br/>+ Metadata"]
+    D["📊 Processing Result<br/>Contour Artifacts (GPKG default)<br/>+ Metadata"]
     
     A --> B
     B --> C
