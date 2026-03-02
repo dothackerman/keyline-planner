@@ -57,10 +57,20 @@ Three test levels aligned with the two-layer model:
 |-------|-------|---------|----------|
 | **Unit** | Individual functions/classes | No | In-memory |
 | **Integration** | Module composition (raster + contour pipeline) | No | Synthetic DEMs |
-| **E2E** | CLI invocation → output validation | No (mocked) | Synthetic DEMs + CliRunner |
+| **E2E (default)** | CLI invocation → output validation | No (mocked pipeline) | CliRunner + mocked `run_contour_pipeline` |
+| **E2E (smoke)** | Minimal live end-to-end path | Yes (opt-in) | Real STAC + GDAL, gated by `KEYLINE_RUN_NETWORK_SMOKE=1` |
 
-Golden-file regression testing via `pytest-regressions` for contour output stability.
-Performance regression tracking via `pytest-benchmark`.
+Golden-file regression testing via `pytest-regressions` is planned for future
+contour output stability hardening.
+Performance regression tracking via `pytest-benchmark` is planned for future
+quality-gate expansion.
+
+## 8.7 Runtime Connectivity
+
+- Current runtime contour generation requires network access to swisstopo STAC
+  for tile discovery.
+- Cached tiles reduce repeated downloads, but discovery still hits STAC.
+- Fully offline runtime execution is planned future work.
 
 ---
 

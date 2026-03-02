@@ -112,7 +112,6 @@ def clip_dem(
         if result.returncode != 0:
             logger.error("gdalwarp stderr: %s", result.stderr)
             logger.error("gdalwarp stdout: %s", result.stdout)
-            msg = f"gdalwarp failed: {result.stderr}"
             raise subprocess.CalledProcessError(
                 result.returncode, cmd, result.stdout, result.stderr
             )

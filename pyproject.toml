@@ -120,12 +120,18 @@ module = [
     "shapely.*",
     "typer.*",
     "rich.*",
+    "requests",
+    "requests.*",
 ]
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = ["keyline_planner.cli.*"]
 disable_error_code = ["misc"]
+
+[[tool.mypy.overrides]]
+module = ["keyline_planner.engine.cache", "keyline_planner.engine.tiles"]
+disable_error_code = ["import-untyped"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

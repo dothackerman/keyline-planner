@@ -17,7 +17,7 @@
 | Item | Severity | Plan |
 |------|----------|------|
 | No GDAL version pinning in pyproject.toml | Medium | Add Dockerfile or conda lock file |
-| Temporary files not always cleaned up | Low | Add cleanup in pipeline finally block |
+| Full offline runtime mode not implemented | Medium | Add offline discovery mode + local tile index (`--offline`) |
 | No retry logic for tile downloads | Low | Add exponential backoff in cache.py |
 | No CLI progress bars for long operations | Low | Add Rich progress bars in Milestone 1.1 |
 | STAC API URL hardcoded | Low | Move to configuration file |

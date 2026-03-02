@@ -22,13 +22,14 @@ The immediate goal is a functional CLI that:
 
 - **Milestone 2**: Hydrology and vegetation layer integration
 - **Milestone 3**: Keyline pattern generation and planning tools
+- **Milestone 1.x**: Full offline runtime mode (no live STAC dependency)
 
 ## 1.2 Quality Goals
 
 | Priority | Goal | Measure |
 |----------|------|---------|
 | 1 | **Determinism** | Identical inputs produce identical outputs |
-| 2 | **Testability** | All layers have automated tests; E2E tests run without network |
+| 2 | **Testability** | All layers have automated tests; default CI suite runs without network |
 | 3 | **Modularity** | Engine modules are independently testable and replaceable |
 | 4 | **Developer Experience** | Runs on standard machines with minimal setup |
 | 5 | **Correctness** | CRS transformations and contour geometry are verifiably correct |

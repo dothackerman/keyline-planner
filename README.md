@@ -5,7 +5,22 @@ CLI-first Swiss contour generation engine for keyline design planning.
 Generates topographic contour lines from [swissALTI3D](https://www.swisstopo.admin.ch/en/height-model-swissalti3d)
 elevation data, designed for agricultural and landscape management workflows.
 
-> **Status**: Milestone 1 — Proof of concept. Under active agentic development.
+> **Status**: Milestone 1 — contour generation engine implemented.
+
+### Capability Status
+
+Implemented now (Milestone 1):
+- CLI contour generation from bbox or GeoJSON AOI
+- LV95/WGS84 input support with LV95 processing/output
+- Tile discovery via swisstopo STAC + local tile caching
+- GDAL-based DEM clipping and contour extraction
+- Provenance manifest output (`manifest.json`)
+- Deterministic offline-by-default test suite (unit/integration/E2E with mocks)
+
+Planned/Future:
+- Full offline runtime mode (run without live STAC access)
+- Hydrology and vegetation layer integration (Milestone 2)
+- Keyline pattern generation/planning tools (Milestone 3)
 
 ## Quick Start
 
@@ -64,27 +79,53 @@ Install QGIS from the official download page:
 - https://qgis.org/download/
 - Installation guide: https://docs.qgis.org/latest/en/docs/user_manual/introduction/getting_started.html
 
-To inspect contours over the DEM:
+To inspect generated contours on the Swiss national basemap:
 
 1. Open QGIS and create a new project.
-2. Set project CRS to `EPSG:2056` (Project -> Properties -> CRS).  
-   This matches Swiss LV95 outputs and avoids on-the-fly reprojection confusion.
-3. Drag `dem_clip.tif` into the map.
-4. Drag `contours.geojson` into the map.
-5. In the Layers panel, keep `contours.geojson` above `dem_clip.tif`.
-6. Style the DEM for readability:
-   - Right-click `dem_clip.tif` -> Properties -> Symbology
-   - Render type: `Singleband pseudocolor`
-   - Color ramp: e.g. `Terrain`
-7. Style contours:
+2. Set project CRS to `EPSG:2056`:
+   `Project -> Properties -> CRS -> EPSG:2056`.
+3. Add swisstopo WMS basemap:
+   `Layer -> Add Layer -> Add WMS/WMTS Layer -> New`.
+4. Configure WMS connection:
+   - Name: `swisstopo WMS`
+   - URL: `https://wms.geo.admin.ch/?Lang=en`
+   - Version: `1.3.0`
+   - Leave auth empty (public service)
+5. Click `Connect`, then choose a national map layer such as:
+   - `ch.swisstopo.pixelkarte-farbe` (color national map), or
+   - another `ch.swisstopo.pixelkarte*` layer available in capabilities.
+6. In WMS layer options, use:
+   - CRS: `EPSG:2056`
+   - Image encoding: `image/png`
+7. Add your generated files:
+   - `contours.geojson`
+   - optionally `dem_clip.tif`
+8. Layer order in the Layers panel:
+   - Basemap WMS at bottom
+   - `dem_clip.tif` above it (optional)
+   - `contours.geojson` on top
+9. Style contours:
    - Right-click `contours.geojson` -> Properties -> Symbology
-   - Simple line, width `0.6-1.2 px`, high-contrast color (e.g. dark brown/black)
-   - Optional labels: enable labels and use the elevation field for line labels
-8. Zoom to layer extent and visually verify contour alignment against terrain transitions.
+   - Use a high-contrast line color (dark brown/black), width `0.6-1.2 px`
+   - Optional labels: label by `elevation`
+10. Zoom and verify:
+   - Right-click `contours.geojson` -> `Zoom to Layer`
+   - Check contour alignment with ridges/valleys in the basemap.
 
-That is sufficient for manual visual inspection on a raster base layer.
-Optional improvements for easier review: add a hillshade from `dem_clip.tif`,
-use rule-based styling for index contours, and save the project as a `.qgz` template.
+Troubleshooting:
+- If layers look offset, confirm project CRS and WMS layer CRS are both `EPSG:2056`.
+- If labels are not in your preferred language, change `Lang=` in the WMS URL (`en`, `de`, `fr`, `it`, `rm`).
+- If rendering is slow at national extent, zoom in or switch to WMTS.
+
+WMTS alternative (faster tiled basemap):
+- Add connection with URL  
+  `https://wmts.geo.admin.ch/EPSG/2056/1.0.0/WMTSCapabilities.xml?lang=en`
+- Use WMTS when you prioritize map performance over dynamic WMS rendering.
+
+References:
+- WMS: https://docs.geo.admin.ch/visualize-data/wms.html
+- WMTS: https://docs.geo.admin.ch/visualize-data/wmts.html
+- Layer metadata: https://docs.geo.admin.ch/explore-data/get-layer-metadata.html
 
 ## Development
 
@@ -96,6 +137,9 @@ make test-unit    # Run unit tests only
 make lint         # Run ruff linter
 make format       # Auto-format code
 make coverage     # Run tests with coverage report
+
+# Optional: run live network smoke tests
+KEYLINE_RUN_NETWORK_SMOKE=1 pytest -m network
 ```
 
 ### Project Structure

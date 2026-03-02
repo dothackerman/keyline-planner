@@ -38,7 +38,7 @@ battle-tested, well-documented operations with predictable behaviour.
 | Quality Goal | Strategy |
 |-------------|----------|
 | Determinism | Canonical output ordering; coordinate rounding; sorted keys |
-| Testability | Synthetic DEMs for offline testing; CliRunner for E2E |
+| Testability | Synthetic DEMs for offline testing; mocked CliRunner E2E by default; opt-in network smoke tests |
 | Modularity | Each engine module has a single responsibility; no cross-dependencies |
 | Developer UX | Default 2m resolution (~1MB/tile); clear error messages |
 

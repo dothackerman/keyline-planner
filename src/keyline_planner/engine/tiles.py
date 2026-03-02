@@ -108,7 +108,7 @@ def discover_tiles(
         )
         msg = (
             f"Failed to reach STAC API at {stac_url}. "
-            f"Underlying error: {type(exc).__name__}: {str(exc)}"
+            f"Underlying error: {type(exc).__name__}: {exc}"
         )
         raise ConnectionError(msg) from exc
 
