@@ -10,6 +10,7 @@ from keyline_planner.engine.geometry import (
     bbox_to_geometry,
     geometry_to_bbox,
     normalise_aoi,
+    point_to_square_bbox_lv95,
     reproject_geometry,
     validate_geojson_geometry,
 )
@@ -95,6 +96,49 @@ class TestBboxToGeometry:
         geom = bbox_to_geometry(bbox)
         assert geom["type"] == "Polygon"
         assert len(geom["coordinates"][0]) == 5  # Closed ring
+
+
+class TestPointToSquareBboxLv95:
+    """Tests for point-centered square bbox generation."""
+
+    def test_lv95_point_returns_expected_square(self) -> None:
+        bbox = point_to_square_bbox_lv95(
+            point=(2_600_500.0, 1_200_500.0),
+            extent_m=200.0,
+            crs=CRS.LV95,
+        )
+        assert bbox.as_tuple() == (2_600_300.0, 1_200_300.0, 2_600_700.0, 1_200_700.0)
+        assert bbox.crs == CRS.LV95
+
+    def test_wgs84_point_is_reprojected_and_square_size_matches(self) -> None:
+        # Bern area, expressed as (longitude, latitude)
+        bbox = point_to_square_bbox_lv95(
+            point=(7.4474, 46.948),
+            extent_m=150.0,
+            crs=CRS.WGS84,
+        )
+        assert bbox.crs == CRS.LV95
+        assert bbox.xmin > 2_000_000
+        assert bbox.ymin > 1_000_000
+        assert bbox.xmax - bbox.xmin == pytest.approx(300.0)
+        assert bbox.ymax - bbox.ymin == pytest.approx(300.0)
+
+    @pytest.mark.parametrize("extent", [0.0, -1.0])
+    def test_non_positive_extent_raises(self, extent: float) -> None:
+        with pytest.raises(ValueError, match="Extent must be positive"):
+            point_to_square_bbox_lv95(
+                point=(2_600_500.0, 1_200_500.0),
+                extent_m=extent,
+                crs=CRS.LV95,
+            )
+
+    def test_lv95_guard_catches_degree_like_input(self) -> None:
+        with pytest.raises(ValueError, match="Use --crs wgs84"):
+            point_to_square_bbox_lv95(
+                point=(8.131196, 47.099516),
+                extent_m=100.0,
+                crs=CRS.LV95,
+            )
 
 
 class TestNormaliseAoi:

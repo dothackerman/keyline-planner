@@ -156,6 +156,58 @@ def bbox_to_geometry(bbox: BBox) -> dict[str, Any]:
     }
 
 
+def point_to_square_bbox_lv95(
+    point: tuple[float, float],
+    extent_m: float,
+    crs: CRS = CRS.LV95,
+) -> BBox:
+    """Create an LV95 square bbox around a center point.
+
+    Args:
+        point: Point coordinates as (x, y) in the provided CRS.
+            For WGS84 this means (longitude, latitude).
+        extent_m: Half-side extent in meters. The output square side is 2 * extent_m.
+        crs: CRS of the input point.
+
+    Returns:
+        Square BBox in LV95 centered on the input point.
+
+    Raises:
+        ValueError: If extent is non-positive or point coordinates are invalid for CRS.
+    """
+    if extent_m <= 0:
+        msg = f"Extent must be positive, got {extent_m}"
+        raise ValueError(msg)
+
+    x, y = point
+
+    if crs == CRS.LV95:
+        # Heuristic guard for common CRS mix-ups (degrees passed as meters).
+        if abs(x) <= 180 and abs(y) <= 90:
+            msg = (
+                "LV95 point appears to be geographic degrees. "
+                "Use --crs wgs84 for latitude/longitude input."
+            )
+            raise ValueError(msg)
+        center_x, center_y = x, y
+    elif crs == CRS.WGS84:
+        if not (-180 <= x <= 180 and -90 <= y <= 90):
+            msg = f"Invalid WGS84 point ({x}, {y}). Expected longitude/latitude degrees."
+            raise ValueError(msg)
+        center_x, center_y = _TRANSFORMER_WGS84_TO_LV95.transform(x, y)
+    else:
+        msg = f"Unsupported point CRS: {crs}"
+        raise ValueError(msg)
+
+    return BBox(
+        xmin=center_x - extent_m,
+        ymin=center_y - extent_m,
+        xmax=center_x + extent_m,
+        ymax=center_y + extent_m,
+        crs=CRS.LV95,
+    )
+
+
 def normalise_aoi(
     geojson: dict[str, Any] | None = None,
     bbox: tuple[float, float, float, float] | None = None,
