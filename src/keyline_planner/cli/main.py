@@ -217,10 +217,7 @@ def contours(
                 msg = "Expected 2 values"
                 raise ValueError(msg)
             # In WGS84, CLI accepts lat,lon for user ergonomics.
-            if input_crs == CRS.WGS84:
-                point_xy = (parts[1], parts[0])  # (lon, lat)
-            else:
-                point_xy = (parts[0], parts[1])  # (x, y)
+            point_xy = (parts[1], parts[0]) if input_crs == CRS.WGS84 else (parts[0], parts[1])
             bbox_lv95 = point_to_square_bbox_lv95(point_xy, extent_m=extent_m, crs=input_crs)
             parsed_bbox = bbox_lv95.as_tuple()
             input_crs = CRS.LV95
