@@ -2,12 +2,14 @@
 
 Responsibilities:
     - Generate contour isolines from a clipped DEM.
-    - Format contours as GeoJSON with stable, deterministic output.
+    - Format contours with stable, deterministic output.
     - Apply optional simplification (Douglas-Peucker).
     - Sort and canonicalise features for golden-file testing.
 
-Uses GDAL's gdal_contour utility for extraction, then post-processes
-the output with Shapely for simplification and canonicalisation.
+Uses GDAL's gdal_contour utility for extraction, then post-processes the
+output with Shapely for simplification and canonicalisation. Supports writing:
+    - GeoJSON (WGS84, standards-compliant)
+    - GeoPackage (LV95, CRS baked into layer metadata)
 """
 
 from __future__ import annotations
@@ -35,8 +37,8 @@ def generate_contours(
 ) -> Path:
     """Generate contour lines from a clipped DEM raster.
 
-    Uses gdal_contour to extract isolines, then canonicalises the output
-    for deterministic golden-file testing.
+    Uses gdal_contour to extract isolines and writes standards-compliant
+    WGS84 GeoJSON output.
 
     Args:
         dem_path: Path to the clipped DEM GeoTIFF.
@@ -45,6 +47,28 @@ def generate_contours(
 
     Returns:
         Path to the generated GeoJSON file.
+
+    Raises:
+        subprocess.CalledProcessError: If gdal_contour fails.
+    """
+    features_lv95 = extract_canonical_contour_features_lv95(dem_path, params)
+    write_contours_geojson_wgs84(features_lv95, output_path, params)
+    logger.info("Generated %d contour features → %s", len(features_lv95), output_path)
+    return output_path
+
+
+def extract_canonical_contour_features_lv95(
+    dem_path: Path,
+    params: ContourParams,
+) -> list[dict[str, Any]]:
+    """Extract canonical contour features in LV95 from a DEM raster.
+
+    Args:
+        dem_path: Path to the clipped DEM GeoTIFF.
+        params: Contour generation parameters.
+
+    Returns:
+        Canonical contour features in LV95.
 
     Raises:
         subprocess.CalledProcessError: If gdal_contour fails.
@@ -69,7 +93,7 @@ def generate_contours(
     ]
 
     logger.info(
-        "Generating contours: interval=%.1f, attr=%s",
+        "Extracting contours: interval=%.1f, attr=%s",
         params.interval,
         params.attribute_name,
     )
@@ -93,16 +117,114 @@ def generate_contours(
             logger.warning("No contour features generated — DEM may be flat or too small")
 
         processed_features = _postprocess_features(features, params)
-
-        # Write canonicalised output
-        output_geojson = _build_canonical_geojson(processed_features, params)
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-        output_path.write_text(json.dumps(output_geojson, indent=2, sort_keys=False))
-
-        logger.info("Generated %d contour features → %s", len(processed_features), output_path)
-        return output_path
+        canonical_geojson = _build_canonical_geojson(processed_features, params)
+        canonical_features = canonical_geojson.get("features", [])
+        return [feature for feature in canonical_features if isinstance(feature, dict)]
     finally:
         # Cleanup temp file on both success and failure paths
+        Path(tmp_name).unlink(missing_ok=True)
+
+
+def write_contours_geojson_wgs84(
+    features_lv95: list[dict[str, Any]],
+    output_path: Path,
+    params: ContourParams,
+) -> Path:
+    """Write contour features as standards-compliant WGS84 GeoJSON.
+
+    Args:
+        features_lv95: Canonical contour features in LV95.
+        output_path: Output GeoJSON path.
+        params: Contour generation parameters.
+
+    Returns:
+        Path to the written GeoJSON file.
+    """
+    from keyline_planner.engine.geometry import reproject_geometry
+    from keyline_planner.engine.models import CRS
+
+    features_wgs84: list[dict[str, Any]] = []
+    for feature in features_lv95:
+        reprojected = reproject_geometry(
+            feature["geometry"],
+            source_crs=CRS.LV95,
+            target_crs=CRS.WGS84,
+        )
+        features_wgs84.append(
+            {
+                "type": "Feature",
+                "geometry": _round_geometry_coords(reprojected, precision=7),
+                "properties": feature["properties"],
+            }
+        )
+
+    output_geojson = {
+        "type": "FeatureCollection",
+        "features": features_wgs84,
+    }
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(json.dumps(output_geojson, indent=2, sort_keys=False))
+    return output_path
+
+
+def write_contours_gpkg_lv95(
+    features_lv95: list[dict[str, Any]],
+    output_path: Path,
+    layer_name: str = "contours",
+) -> Path:
+    """Write contour features to a GeoPackage layer in LV95.
+
+    Args:
+        features_lv95: Canonical contour features in LV95.
+        output_path: Output GeoPackage path.
+        layer_name: GeoPackage layer name.
+
+    Returns:
+        Path to the written GeoPackage file.
+
+    Raises:
+        subprocess.CalledProcessError: If ogr2ogr fails.
+    """
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.unlink(missing_ok=True)
+
+    tmp_fd, tmp_name = tempfile.mkstemp(suffix=".geojson", prefix="keyline_contours_lv95_")
+    try:
+        with os.fdopen(tmp_fd, "w") as tmp:
+            json.dump(
+                {
+                    "type": "FeatureCollection",
+                    "features": features_lv95,
+                },
+                tmp,
+            )
+
+        cmd = [
+            "ogr2ogr",
+            "-f",
+            "GPKG",
+            str(output_path),
+            tmp_name,
+            "-nln",
+            layer_name,
+            "-a_srs",
+            "EPSG:2056",
+            "-overwrite",
+        ]
+
+        try:
+            subprocess.run(cmd, check=True, capture_output=True, text=True)
+        except subprocess.CalledProcessError as exc:
+            logger.error("ogr2ogr failed with exit code %s", exc.returncode)
+            if exc.stderr:
+                logger.error("ogr2ogr stderr:\n%s", exc.stderr.strip())
+            if exc.stdout:
+                logger.debug("ogr2ogr stdout:\n%s", exc.stdout.strip())
+            raise
+
+        return output_path
+    finally:
         Path(tmp_name).unlink(missing_ok=True)
 
 
