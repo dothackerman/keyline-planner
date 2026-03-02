@@ -17,7 +17,11 @@ import time
 from typing import TYPE_CHECKING, Any
 
 from keyline_planner.engine.cache import TileCache
-from keyline_planner.engine.contours import count_contours, generate_contours
+from keyline_planner.engine.contours import (
+    extract_canonical_contour_features_lv95,
+    write_contours_geojson_wgs84,
+    write_contours_gpkg_lv95,
+)
 from keyline_planner.engine.geometry import normalise_aoi
 from keyline_planner.engine.models import (
     CRS,
@@ -124,12 +128,26 @@ def run_contour_pipeline(
     elevation_range = (dem_stats["min"], dem_stats["max"])
     logger.info("DEM elevation range: %.1f - %.1f m", *elevation_range)
 
-    # --- Step 7: Generate contours ---
+    # --- Step 7: Generate contour artifacts ---
     logger.info("Step 6/6: Generating contours")
-    contours_path = output_dir / "contours.geojson"
-    generate_contours(dem_clip_path, contours_path, params)
+    features_lv95 = extract_canonical_contour_features_lv95(dem_clip_path, params)
+    contours_gpkg_path: Path | None = None
+    contours_geojson_path: Path | None = None
 
-    contour_count = count_contours(contours_path)
+    if output_format in (OutputFormat.GPKG, OutputFormat.BOTH):
+        contours_gpkg_path = output_dir / "contours.gpkg"
+        write_contours_gpkg_lv95(features_lv95, contours_gpkg_path)
+
+    if output_format in (OutputFormat.GEOJSON, OutputFormat.BOTH):
+        contours_geojson_path = output_dir / "contours.geojson"
+        write_contours_geojson_wgs84(features_lv95, contours_geojson_path, params)
+
+    contours_path = contours_gpkg_path or contours_geojson_path
+    if contours_path is None:
+        msg = f"Unexpected output format: {output_format}"
+        raise ValueError(msg)
+
+    contour_count = len(features_lv95)
 
     # Optionally remove clipped DEM to save space
     clipped_dem_final: Path | None = None
@@ -145,6 +163,8 @@ def run_contour_pipeline(
         aoi_hash=aoi_hash,
         params=params,
         output_format=output_format,
+        contours_gpkg_path=contours_gpkg_path,
+        contours_geojson_path=contours_geojson_path,
         tile_ids=tile_ids,
         dem_stats=dem_stats,
         contour_count=contour_count,
@@ -158,7 +178,8 @@ def run_contour_pipeline(
         elevation_range=elevation_range,
         aoi_hash=aoi_hash,
         params=params,
-        contours_geojson_path=contours_path,
+        contours_gpkg_path=contours_gpkg_path,
+        contours_geojson_path=contours_geojson_path,
         tile_ids=tile_ids,
     )
 
@@ -177,6 +198,8 @@ def _write_manifest(
     aoi_hash: str,
     params: ContourParams,
     output_format: OutputFormat,
+    contours_gpkg_path: Path | None,
+    contours_geojson_path: Path | None,
     tile_ids: list[str],
     dem_stats: dict[str, Any],
     contour_count: int,
@@ -192,6 +215,8 @@ def _write_manifest(
         aoi_hash: Canonical hash of the AOI.
         params: Processing parameters used.
         output_format: Configured contour output format.
+        contours_gpkg_path: Optional GeoPackage output path.
+        contours_geojson_path: Optional GeoJSON output path.
         tile_ids: STAC tile IDs processed.
         dem_stats: DEM statistics from the clipped raster.
         contour_count: Number of contour features generated.
@@ -204,7 +229,11 @@ def _write_manifest(
             "resolution": params.resolution.value,
             "simplify_tolerance": params.simplify_tolerance,
             "attribute_name": params.attribute_name,
-            "output_format": output_format.value,
+        },
+        "output_format": output_format.value,
+        "outputs": {
+            "gpkg": str(contours_gpkg_path) if contours_gpkg_path is not None else None,
+            "geojson": str(contours_geojson_path) if contours_geojson_path is not None else None,
         },
         "tiles_used": tile_ids,
         "dem_stats": dem_stats,
