@@ -12,7 +12,7 @@ for agricultural and landscape management.
 
 The immediate goal is a functional CLI that:
 
-1. Accepts an area of interest (AOI) as a polygon or bounding box
+1. Accepts an area of interest (AOI) as a polygon, bounding box, or point-centered square extent
 2. Fetches Swiss elevation data (swissALTI3D) from swisstopo's STAC API
 3. Caches tiles locally for offline re-use
 4. Generates contour lines at configurable intervals

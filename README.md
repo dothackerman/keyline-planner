@@ -10,7 +10,7 @@ elevation data, designed for agricultural and landscape management workflows.
 ### Capability Status
 
 Implemented now (Milestone 1):
-- CLI contour generation from bbox or GeoJSON AOI
+- CLI contour generation from bbox, point+extent square, or GeoJSON AOI
 - LV95/WGS84 input support with LV95 processing/output
 - Tile discovery via swisstopo STAC + local tile caching
 - GDAL-based DEM clipping and contour extraction
@@ -64,6 +64,13 @@ keyline contours --geojson parcel.geojson --resolution high --simplify 1.0
 # WGS84 input coordinates
 keyline contours --bbox "7.44,46.94,7.45,46.95" --crs wgs84
 
+# Generate from a center point with a 200m half-side square extent
+# WGS84 point order is lat,lon
+keyline contours --point "47.099516,8.131196" --crs wgs84 --extent-m 200
+
+# LV95 point input (x,y meters); default extent is 100m (200m side square)
+keyline contours --point "2600500,1200500"
+
 # Export WGS84 GeoJSON instead of default GPKG
 keyline contours --bbox "2600000,1200000,2601000,1201000" --format geojson
 
@@ -73,6 +80,14 @@ keyline contours --bbox "2600000,1200000,2601000,1201000" --format both
 # See all options
 keyline contours --help
 ```
+
+AOI input modes:
+- Provide exactly one of `--bbox`, `--point`, or `--geojson`.
+- `--crs` default is `lv95`.
+- `--point` uses:
+  - `x,y` when `--crs lv95`
+  - `lat,lon` when `--crs wgs84`
+- `--extent-m` is the half-side in meters for point mode (default `100`).
 
 ### Output
 

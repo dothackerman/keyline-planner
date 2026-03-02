@@ -27,7 +27,7 @@ graph LR
 ```
 engine/
 ├── models.py      # Value objects: AOI, BBox, TileInfo, ContourParams, etc.
-├── geometry.py     # AOI validation, CRS transformation, normalisation
+├── geometry.py     # AOI validation, CRS transformation, point->square AOI helper
 ├── tiles.py        # STAC tile discovery (network boundary)
 ├── cache.py        # Content-addressed tile + artifact caching
 ├── raster.py       # GDAL raster operations: VRT, clip, stats
@@ -40,7 +40,7 @@ engine/
 | Module | Input | Output | Side Effects |
 |--------|-------|--------|-------------|
 | `models` | — | Data classes | None |
-| `geometry` | GeoJSON / bbox + CRS | Normalised AOI (LV95) | None |
+| `geometry` | GeoJSON / bbox / point+extent + CRS | Normalised AOI (LV95) or derived LV95 bbox | None |
 | `tiles` | AOI | List of TileInfo | Network (STAC API) |
 | `cache` | TileInfo list | Local file paths | Disk I/O, Network |
 | `raster` | File paths + AOI | Clipped DEM path | Disk I/O (GDAL) |

@@ -34,7 +34,7 @@ graph TB
 
 ```mermaid
 graph TD
-    A["📥 User Input<br/>AOI + Parameters"]
+    A["📥 User Input<br/>AOI (--bbox | --point | --geojson) + Parameters"]
     B["🖥️ CLI Adapter<br/>Parse args → Call Engine"]
     C["⚙️ Engine Pipeline<br/><br/>1️⃣ Normalise AOI<br/>2️⃣ Discover Tiles<br/>3️⃣ Cache Tiles<br/>4️⃣ Build VRT Mosaic<br/>5️⃣ Clip DEM<br/>6️⃣ Generate Contours<br/>7️⃣ Write Outputs"]
     D["📊 Processing Result<br/>Contour Artifacts (GPKG default)<br/>+ Metadata"]
@@ -54,6 +54,7 @@ graph TD
 - Input: WGS84 (EPSG:4326) or LV95 (EPSG:2056)
 - Processing: Always in LV95 (EPSG:2056)
 - Output: LV95 (EPSG:2056) — matches source DEM
+- Point mode: WGS84 input is provided as `lat,lon` in CLI, then converted to LV95 and expanded to a square AOI via `--extent-m`
 
 ---
 
