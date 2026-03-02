@@ -42,5 +42,5 @@ def test_contours_network_smoke(
         ],
     )
     assert result.exit_code == 0
-    assert (output_dir / "contours.geojson").exists()
+    assert (output_dir / "contours.gpkg").exists()
     assert (output_dir / "manifest.json").exists()

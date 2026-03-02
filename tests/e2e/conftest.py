@@ -18,8 +18,8 @@ def mock_processing_result(tmp_dir: Path) -> ProcessingResult:
     output_dir = tmp_dir / "mock_output"
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    contours_path = output_dir / "contours.geojson"
-    contours_path.write_text('{"type":"FeatureCollection","features":[]}')
+    contours_path = output_dir / "contours.gpkg"
+    contours_path.write_text("mock gpkg")
 
     dem_path = output_dir / "dem_clip.tif"
     dem_path.write_text("mock dem")
@@ -31,6 +31,7 @@ def mock_processing_result(tmp_dir: Path) -> ProcessingResult:
         elevation_range=(450.0, 780.0),
         aoi_hash="deadbeefcafebabe",
         params=ContourParams(),
+        contours_gpkg_path=contours_path,
         tile_ids=["tile_001", "tile_002"],
     )
 

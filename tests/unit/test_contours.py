@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import shutil
 from typing import TYPE_CHECKING
 
 import pytest
@@ -13,6 +14,8 @@ from keyline_planner.engine.contours import (
     _round_geometry_coords,
     count_contours,
     get_elevation_range,
+    write_contours_geojson_wgs84,
+    write_contours_gpkg_lv95,
 )
 from keyline_planner.engine.models import ContourParams
 
@@ -155,3 +158,44 @@ class TestGetElevationRange:
         path.write_text(json.dumps(geojson))
         with pytest.raises(ValueError, match="No features"):
             get_elevation_range(path)
+
+
+class TestOutputWriters:
+    """Tests for contour output writers."""
+
+    def test_write_geojson_wgs84_reprojects_coordinates(self, tmp_dir: Path) -> None:
+        features_lv95 = [
+            {
+                "type": "Feature",
+                "geometry": {
+                    "type": "LineString",
+                    "coordinates": [[2600000.0, 1200000.0], [2600100.0, 1200100.0]],
+                },
+                "properties": {"elevation": 500.0},
+            }
+        ]
+        output = tmp_dir / "contours.geojson"
+        write_contours_geojson_wgs84(features_lv95, output, ContourParams())
+
+        data = json.loads(output.read_text())
+        coords = data["features"][0]["geometry"]["coordinates"][0]
+        lon, lat = coords[0], coords[1]
+        assert 5.0 <= lon <= 11.0
+        assert 45.0 <= lat <= 48.5
+
+    @pytest.mark.skipif(shutil.which("ogr2ogr") is None, reason="ogr2ogr is required")
+    def test_write_gpkg_lv95_creates_file(self, tmp_dir: Path) -> None:
+        features_lv95 = [
+            {
+                "type": "Feature",
+                "geometry": {
+                    "type": "LineString",
+                    "coordinates": [[2600000.0, 1200000.0], [2600100.0, 1200100.0]],
+                },
+                "properties": {"elevation": 500.0},
+            }
+        ]
+        output = tmp_dir / "contours.gpkg"
+        write_contours_gpkg_lv95(features_lv95, output)
+        assert output.exists()
+        assert output.stat().st_size > 0

@@ -14,7 +14,7 @@ import pytest
 from typer.testing import CliRunner
 
 from keyline_planner.cli.main import app
-from keyline_planner.engine.models import CRS, Resolution
+from keyline_planner.engine.models import CRS, ContourParams, OutputFormat, Resolution
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -94,6 +94,19 @@ class TestCLIValidation:
         )
         assert result.exit_code == 1
 
+    def test_invalid_output_format(self) -> None:
+        result = runner.invoke(
+            app,
+            [
+                "contours",
+                "--bbox",
+                "2600000,1200000,2601000,1201000",
+                "--format",
+                "invalid",
+            ],
+        )
+        assert result.exit_code == 1
+
 
 class TestCLISuccessPaths:
     """Tests for successful CLI invocations with mocked pipeline execution."""
@@ -120,6 +133,7 @@ class TestCLISuccessPaths:
         assert kwargs["resolution"] == Resolution.STANDARD
         assert kwargs["interval"] == 1.0
         assert kwargs["simplify_tolerance"] == 0.0
+        assert kwargs["output_format"] == OutputFormat.GPKG
         assert kwargs["save_clipped_dem"] is True
 
     def test_passes_through_cli_options(
@@ -148,6 +162,8 @@ class TestCLISuccessPaths:
                 str(output_dir),
                 "--cache",
                 str(cache_dir),
+                "--format",
+                "both",
                 "--no-dem",
             ],
         )
@@ -160,9 +176,65 @@ class TestCLISuccessPaths:
         assert kwargs["resolution"] == Resolution.HIGH
         assert kwargs["interval"] == 2.5
         assert kwargs["simplify_tolerance"] == 1.2
+        assert kwargs["output_format"] == OutputFormat.BOTH
         assert kwargs["output_dir"] == output_dir
         assert kwargs["cache_root"] == cache_dir
         assert kwargs["save_clipped_dem"] is False
+
+    def test_both_format_displays_both_paths_and_primary_stdout(
+        self,
+        tmp_dir: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        output_dir = tmp_dir / "both_output"
+        output_dir.mkdir(parents=True, exist_ok=True)
+        gpkg = output_dir / "contours.gpkg"
+        geojson = output_dir / "contours.geojson"
+        gpkg.write_text("mock gpkg")
+        geojson.write_text('{"type":"FeatureCollection","features":[]}')
+
+        calls: list[dict[str, Any]] = []
+
+        def _mock_result() -> Any:
+            from keyline_planner.engine.models import ProcessingResult
+
+            return ProcessingResult(
+                contours_path=gpkg,
+                clipped_dem_path=None,
+                contour_count=3,
+                elevation_range=(500.0, 560.0),
+                aoi_hash="feedfacecafebeef",
+                params=ContourParams(),
+                contours_gpkg_path=gpkg,
+                contours_geojson_path=geojson,
+                tile_ids=["tile_a"],
+            )
+
+        def _mock_pipeline(**kwargs: Any) -> Any:
+            calls.append(kwargs)
+            return _mock_result()
+
+        monkeypatch.setattr("keyline_planner.cli.main.run_contour_pipeline", _mock_pipeline)
+
+        result = runner.invoke(
+            app,
+            [
+                "contours",
+                "--bbox",
+                "2600000,1200000,2601000,1201000",
+                "--format",
+                "both",
+            ],
+        )
+
+        assert result.exit_code == 0
+        assert "Contours (GPKG)" in result.output
+        assert "Contours (GeoJSON)" in result.output
+
+        lines = [line for line in result.output.splitlines() if line.strip()]
+        assert lines[-1].strip() == str(gpkg)
+        assert len(calls) == 1
+        assert calls[0]["output_format"] == OutputFormat.BOTH
 
 
 class TestCLIGeojsonParsing:

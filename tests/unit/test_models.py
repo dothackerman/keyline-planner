@@ -9,6 +9,7 @@ from keyline_planner.engine.models import (
     CRS,
     BBox,
     ContourParams,
+    OutputFormat,
     Resolution,
 )
 
@@ -60,6 +61,19 @@ class TestResolution:
 
     def test_high_is_half_meter(self) -> None:
         assert Resolution.HIGH.value == 0.5
+
+
+class TestOutputFormat:
+    """Tests for output format enum."""
+
+    def test_gpkg_default_value(self) -> None:
+        assert OutputFormat.GPKG.value == "gpkg"
+
+    def test_geojson_value(self) -> None:
+        assert OutputFormat.GEOJSON.value == "geojson"
+
+    def test_both_value(self) -> None:
+        assert OutputFormat.BOTH.value == "both"
 
 
 class TestContourParams:
