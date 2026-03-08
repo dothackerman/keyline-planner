@@ -254,3 +254,14 @@ Changes to AGENTS.md must:
 - Preserve self-improvement principle.
 - Preserve human documentation boundary.
 - Justify structural shifts.
+
+---
+
+# 13. Git Discipline (Non-Negotiable)
+
+- Git is backup and rollback. Use it continuously.
+- Commit related changes together in small, reviewable slices.
+- Run required checks before each commit.
+- Push every clean, meaningful commit promptly (no local commit backlog).
+- Do not finish a task with relevant uncommitted or unpushed changes.
+- Never bundle unrelated work in one commit.
